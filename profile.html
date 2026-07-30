@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — Flowsync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="navbar-auth.css" />
+  <link rel="stylesheet" href="profile.css" />
+  <link rel="stylesheet" href="theme.css" />
+  <script>
+    (function(){var t=localStorage.getItem('flowsync-theme')||
+    (window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
+    document.documentElement.setAttribute('data-theme',t);})();
+  </script>
+</head>
+<body class="inner-page">
+
+<!-- Shared SVG gradient defs — used by [data-theme="light"] .logo-bg -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="fsLogoLight" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2A9D8F"/>
+      <stop offset="1" stop-color="#38B2A3"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+  <!-- NAVBAR (shared, auth-aware) -->
+  <header class="navbar scrolled" id="navbar">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="8" fill="url(#lgProfile)" class="logo-bg"/>
+          <path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="lgProfile" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#6C63FF"/><stop offset="1" stop-color="#3B82F6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>Flowsync</span>
+      </a>
+
+      <!-- nav links (same as main page) -->
+      <nav class="nav-links">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#how-it-works">How it works</a>
+        <a href="index.html#pricing">Pricing</a>
+      </nav>
+
+      <!-- Auth-aware nav actions -->
+      <div class="nav-actions" id="navActions">
+        <div id="navThemeToggle"></div>
+        <div class="nav-auth-out" id="navAuthOut">
+          <a href="signin.html" class="btn-ghost">Sign in</a>
+          <a href="signup.html" class="btn-primary">Start free trial</a>
+        </div>
+        <div class="nav-auth-in" id="navAuthIn" style="display:none;">
+          <a href="dashboard.html" class="btn-outline btn-sm">Go to app</a>
+          <div class="nav-profile" id="navProfile">
+            <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+              <span class="profile-avatar" id="profileAvatar">?</span>
+            </button>
+            <div class="profile-dropdown" id="profileDropdown" role="menu" aria-hidden="true">
+              <div class="dropdown-user">
+                <div class="dropdown-avatar" id="dropdownAvatar">?</div>
+                <div class="dropdown-user-info">
+                  <div class="dropdown-name" id="dropdownName">User</div>
+                  <div class="dropdown-email" id="dropdownEmail">user@example.com</div>
+                </div>
+              </div>
+              <div class="dropdown-divider"></div>
+              <a href="profile.html" class="dropdown-item active-item" role="menuitem">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                Profile
+              </a>
+              <a href="settings.html" class="dropdown-item" role="menuitem">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="2" stroke="currentColor" stroke-width="1.4"/><path d="M7.5 1v1.5M7.5 12.5V14M1 7.5h1.5M12.5 7.5H14M3 3l1 1M11 11l1 1M11 3l-1 1M4 11l-1 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                Settings
+              </a>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item dropdown-logout" id="logoutBtn" role="menuitem">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M5 2H3a1 1 0 00-1 1v9a1 1 0 001 1h2M10 10l3-3-3-3M6 7.5h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Log out
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="index.html#features" class="mobile-link">Features</a>
+    <a href="index.html#how-it-works" class="mobile-link">How it works</a>
+    <a href="index.html#pricing" class="mobile-link">Pricing</a>
+    <div id="mobileAuthOut">
+      <a href="signin.html" class="mobile-link">Sign in</a>
+      <a href="signup.html" class="btn-primary mobile-cta">Start free trial</a>
+    </div>
+    <div id="mobileAuthIn" style="display:none;">
+      <div class="mobile-user-row">
+        <div class="profile-avatar mobile-avatar" id="mobileAvatar">?</div>
+        <div>
+          <div class="mobile-user-name" id="mobileUserName">User</div>
+          <div class="mobile-user-email" id="mobileUserEmail">user@example.com</div>
+        </div>
+      </div>
+      <a href="index.html" class="mobile-link">← Back to home</a>
+      <a href="profile.html" class="mobile-link" style="color:var(--violet);font-weight:600;">Profile</a>
+      <a href="settings.html" class="mobile-link">Settings</a>
+      <button class="mobile-link mobile-logout" id="mobileLogoutBtn">Log out</button>
+    </div>
+    <!-- Mobile theme toggle row -->
+    <div class="mobile-theme-row" id="mobileThemeRow"></div>
+  </div>
+
+  <!-- PAGE CONTENT -->
+  <main class="profile-layout">
+
+    <!-- Breadcrumb -->
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html" class="breadcrumb-link">Home</a>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Profile</span>
+      </div>
+    </div>
+
+    <div class="container profile-container">
+
+      <!-- LEFT: sidebar nav -->
+      <aside class="profile-sidebar">
+        <nav class="sidebar-nav">
+          <a href="profile.html" class="sidebar-link active">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            Profile
+          </a>
+          <a href="settings.html" class="sidebar-link">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.4"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M2.8 2.8l1.1 1.1M12.1 12.1l1.1 1.1M12.1 2.8l-1.1 1.1M3.9 12.1l-1.1 1.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            Settings
+          </a>
+          <div class="sidebar-divider"></div>
+          <button class="sidebar-link sidebar-logout" id="sidebarLogoutBtn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3H4a1 1 0 00-1 1v8a1 1 0 001 1h2M11 11l3-3-3-3M7 8h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Log out
+          </button>
+        </nav>
+      </aside>
+
+      <!-- RIGHT: profile card -->
+      <div class="profile-content">
+
+        <!-- View mode -->
+        <section class="profile-card" id="viewMode">
+          <div class="profile-card-header">
+            <h1 class="profile-card-title">Profile</h1>
+            <button class="btn-primary" id="editBtn">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 1.5l3 3L4 13H1v-3L9.5 1.5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Edit Profile
+            </button>
+          </div>
+
+          <div class="profile-avatar-section">
+            <div class="profile-avatar-lg" id="viewAvatar">?</div>
+            <div class="profile-avatar-info">
+              <div class="profile-full-name" id="viewName">Loading…</div>
+              <div class="profile-email-display" id="viewEmail">loading@example.com</div>
+            </div>
+          </div>
+
+          <div class="profile-fields">
+            <div class="profile-field">
+              <div class="field-label">Full name</div>
+              <div class="field-value" id="fieldName">—</div>
+            </div>
+            <div class="profile-field">
+              <div class="field-label">Email address</div>
+              <div class="field-value field-value-muted" id="fieldEmail">—</div>
+              <div class="field-hint">Email address cannot be changed.</div>
+            </div>
+            <div class="profile-field">
+              <div class="field-label">Member since</div>
+              <div class="field-value" id="fieldSince">—</div>
+            </div>
+            <div class="profile-field">
+              <div class="field-label">Account type</div>
+              <div class="field-value">
+                <span class="plan-badge">Pro — 14-day trial</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Edit mode (hidden by default) -->
+        <section class="profile-card" id="editMode" style="display:none;">
+          <div class="profile-card-header">
+            <h1 class="profile-card-title">Edit Profile</h1>
+          </div>
+
+          <div class="profile-avatar-section">
+            <div class="profile-avatar-lg avatar-edit" id="editAvatar">?</div>
+            <div class="profile-avatar-info">
+              <div class="profile-full-name" id="editCurrentName">User</div>
+              <div class="profile-email-display" id="editCurrentEmail">user@example.com</div>
+            </div>
+          </div>
+
+          <form class="edit-form" id="editForm" novalidate>
+            <!-- Name field -->
+            <div class="form-group" id="editNameGroup">
+              <label for="editNameInput" class="form-label">Full name</label>
+              <div class="input-wrap">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                <input type="text" id="editNameInput" class="form-input" placeholder="Your full name" autocomplete="name" aria-describedby="editNameError" />
+              </div>
+              <span class="form-error" id="editNameError" role="alert"></span>
+            </div>
+
+            <!-- Email — read-only -->
+            <div class="form-group">
+              <label class="form-label">Email address <span class="readonly-tag">read-only</span></label>
+              <div class="input-wrap">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12v8a1 1 0 01-1 1H3a1 1 0 01-1-1V4zm0 0l6 5 6-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <input type="email" id="editEmailDisplay" class="form-input form-input-readonly" readonly tabindex="-1" />
+              </div>
+              <span class="field-hint" style="margin-top:4px;display:block;">Email address cannot be changed.</span>
+            </div>
+
+            <!-- Actions -->
+            <div class="edit-actions">
+              <button type="submit" class="btn-primary" id="saveBtn">
+                <span class="btn-text">Save changes</span>
+                <span class="btn-spinner" style="display:none;">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="spin"><circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" stroke-width="2"/><path d="M8 2a6 6 0 016 6" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+                </span>
+              </button>
+              <button type="button" class="btn-outline" id="cancelBtn">Cancel</button>
+            </div>
+          </form>
+        </section>
+
+      </div><!-- /profile-content -->
+    </div><!-- /container -->
+  </main>
+
+  <!-- Toast -->
+  <div id="globalToast" class="toast" role="alert" aria-live="polite">
+    <span class="toast-dot"></span>
+    <span class="toast-msg"></span>
+  </div>
+
+  <script src="auth-state.js"></script>
+  <script src="theme.js"></script>
+  <script src="profile.js"></script>
+</body>
+</html>

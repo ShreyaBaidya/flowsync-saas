@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flowsync — Smart Project Management for Modern Teams</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="navbar-auth.css" />
+  <link rel="stylesheet" href="theme.css" />
+  <script>
+    // Anti-FOUC: apply theme before first paint
+    (function(){var t=localStorage.getItem('flowsync-theme')||
+    (window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
+    document.documentElement.setAttribute('data-theme',t);})();
+  </script>
+</head>
+<body>
+
+<!-- Shared SVG gradient defs — used by [data-theme="light"] .logo-bg -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="fsLogoLight" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2A9D8F"/>
+      <stop offset="1" stop-color="#38B2A3"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- NAVBAR -->
+  <header class="navbar" id="navbar">
+    <div class="container nav-inner">
+      <a href="index.html" class="logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="8" fill="url(#logoGrad)" class="logo-bg"/>
+          <path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#6C63FF"/>
+              <stop offset="1" stop-color="#3B82F6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>Flowsync</span>
+      </a>
+      <nav class="nav-links" id="navLinks">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#testimonials">Testimonials</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <!-- Desktop nav actions: state toggled by JS -->
+      <div class="nav-actions" id="navActions">
+        <!-- Theme toggle — always visible -->
+        <div id="navThemeToggle"></div>
+        <!-- Logged-OUT state (default, hidden when signed in) -->
+        <div class="nav-auth-out" id="navAuthOut">
+          <a href="signin.html" class="btn-ghost">Sign in</a>
+          <a href="signup.html" class="btn-primary">Start free trial</a>
+        </div>
+        <!-- Logged-IN state (hidden by default) -->
+        <div class="nav-auth-in" id="navAuthIn" style="display:none;">
+          <a href="dashboard.html" class="btn-outline btn-sm" id="navDashboardBtn">Go to app</a>
+          <div class="nav-profile" id="navProfile">
+            <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+              <span class="profile-avatar" id="profileAvatar">?</span>
+            </button>
+            <!-- Dropdown -->
+            <div class="profile-dropdown" id="profileDropdown" role="menu" aria-hidden="true">
+              <div class="dropdown-user" id="dropdownUser">
+                <div class="dropdown-avatar" id="dropdownAvatar">?</div>
+                <div class="dropdown-user-info">
+                  <div class="dropdown-name" id="dropdownName">User</div>
+                  <div class="dropdown-email" id="dropdownEmail">user@example.com</div>
+                </div>
+              </div>
+              <div class="dropdown-divider"></div>
+              <a href="profile.html" class="dropdown-item" role="menuitem">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                Profile
+              </a>
+              <a href="settings.html" class="dropdown-item" role="menuitem">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="2" stroke="currentColor" stroke-width="1.4"/><path d="M7.5 1v1.5M7.5 12.5V14M1 7.5h1.5M12.5 7.5H14M3 3l1 1M11 11l1 1M11 3l-1 1M4 11l-1 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                Settings
+              </a>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item dropdown-logout" id="logoutBtn" role="menuitem">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M5 2H3a1 1 0 00-1 1v9a1 1 0 001 1h2M10 10l3-3-3-3M6 7.5h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Log out
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#features" class="mobile-link">Features</a>
+    <a href="#how-it-works" class="mobile-link">How it works</a>
+    <a href="#pricing" class="mobile-link">Pricing</a>
+    <a href="#testimonials" class="mobile-link">Testimonials</a>
+    <a href="#faq" class="mobile-link">FAQ</a>
+    <!-- Mobile auth: logged-out -->
+    <div id="mobileAuthOut">
+      <a href="signin.html" class="mobile-link">Sign in</a>
+      <a href="signup.html" class="btn-primary mobile-cta">Start free trial</a>
+    </div>
+    <!-- Mobile auth: logged-in (hidden by default) -->
+    <div id="mobileAuthIn" style="display:none;">
+      <div class="mobile-user-row" id="mobileUserRow">
+        <div class="profile-avatar mobile-avatar" id="mobileAvatar">?</div>
+        <div>
+          <div class="mobile-user-name" id="mobileUserName">User</div>
+          <div class="mobile-user-email" id="mobileUserEmail">user@example.com</div>
+        </div>
+      </div>
+      <a href="signup.html" class="mobile-link">Go to app</a>
+      <a href="profile.html" class="mobile-link">Profile</a>
+      <a href="settings.html" class="mobile-link">Settings</a>
+      <button class="mobile-link mobile-logout" id="mobileLogoutBtn">Log out</button>
+    </div>
+    <!-- Mobile theme toggle row -->
+    <div class="mobile-theme-row" id="mobileThemeRow"></div>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg-glow"></div>
+    <div class="container hero-inner">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Now with Workflow Automation
+      </div>
+      <h1 class="hero-title">Your team moves faster<br/><span class="gradient-text">when work flows together</span></h1>
+      <p class="hero-sub">Flowsync brings projects, tasks, and team communication into one intelligent workspace — so your team spends less time managing work and more time doing it.</p>
+      <div class="hero-actions">
+        <a href="#pricing" class="btn-primary btn-lg">Start for free</a>
+        <a href="#how-it-works" class="btn-outline btn-lg">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M7 6l5 3-5 3V6z" fill="currentColor"/></svg>
+          See how it works
+        </a>
+      </div>
+      <p class="hero-note">No credit card required · Free 14-day trial · Cancel anytime</p>
+
+      <!-- Dashboard mockup -->
+      <div class="hero-mockup">
+        <div class="mockup-chrome">
+          <div class="chrome-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="chrome-url">app.flowsync.io/dashboard</span>
+        </div>
+        <div class="mockup-body">
+          <div class="mockup-sidebar">
+            <div class="sb-item active">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor"/></svg>
+              Dashboard
+            </div>
+            <div class="sb-item">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Projects
+            </div>
+            <div class="sb-item">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 3h12M1 7h8M1 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Tasks
+            </div>
+            <div class="sb-item">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Timeline
+            </div>
+            <div class="sb-item">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11l3-3 2 2 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Reports
+            </div>
+          </div>
+          <div class="mockup-main">
+            <div class="mockup-header">
+              <span class="mockup-title">Q3 Product Launch</span>
+              <div class="mockup-progress-bar"><div class="mockup-progress-fill"></div></div>
+              <span class="mockup-pct">72%</span>
+            </div>
+            <div class="mockup-cards">
+              <div class="m-card todo">
+                <div class="m-card-label">To Do</div>
+                <div class="m-task"><span class="m-task-dot blue"></span>Research competitors</div>
+                <div class="m-task"><span class="m-task-dot blue"></span>Define user personas</div>
+              </div>
+              <div class="m-card inprog">
+                <div class="m-card-label">In Progress</div>
+                <div class="m-task"><span class="m-task-dot violet"></span>Design landing page</div>
+                <div class="m-task"><span class="m-task-dot violet"></span>Write API docs</div>
+              </div>
+              <div class="m-card done">
+                <div class="m-card-label">Done</div>
+                <div class="m-task"><span class="m-task-dot green"></span>Setup CI/CD pipeline</div>
+                <div class="m-task"><span class="m-task-dot green"></span>Kickoff meeting</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGOS BAR -->
+  <section class="logos-bar">
+    <div class="container">
+      <p class="logos-label">Trusted by teams at</p>
+      <div class="logos-track">
+        <div class="logo-item">Stripe</div>
+        <div class="logo-item">Notion</div>
+        <div class="logo-item">Vercel</div>
+        <div class="logo-item">Linear</div>
+        <div class="logo-item">Figma</div>
+        <div class="logo-item">Loom</div>
+        <div class="logo-item">Intercom</div>
+        <div class="logo-item">Segment</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Features</span>
+        <h2 class="section-title">Everything your team needs<br/>to work smarter</h2>
+        <p class="section-sub">One platform to replace the chaos of scattered tools, endless threads, and missed deadlines.</p>
+      </div>
+      <div class="features-grid">
+        <!-- Card 1: Smart Task Management → dashboard.html#tasks -->
+        <a href="dashboard.html#tasks" class="feature-card feature-card-link reveal" data-feature-link>
+          <div class="feature-icon" style="--ic:#6C63FF;">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 11l5 5L19 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Smart Task Management</h3>
+          <p>Create, assign, and prioritize tasks with ease. Dependencies, subtasks, and due dates are handled automatically.</p>
+          <span class="feature-explore">Explore feature →</span>
+        </a>
+        <!-- Card 2: Project Kanban & Timeline → dashboard.html#timeline -->
+        <a href="dashboard.html#timeline" class="feature-card feature-card-link reveal" data-feature-link>
+          <div class="feature-icon" style="--ic:#3B82F6;">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="2" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"/><path d="M7 11h8M11 7v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Project Kanban & Timeline</h3>
+          <p>Visualize work across boards, lists, and Gantt-style timelines. Switch views without losing context.</p>
+          <span class="feature-explore">Explore feature →</span>
+        </a>
+        <!-- Card 3: Team Collaboration → dashboard.html#team -->
+        <a href="dashboard.html#team" class="feature-card feature-card-link reveal" data-feature-link>
+          <div class="feature-icon" style="--ic:#10B981;">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M3 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Team Collaboration</h3>
+          <p>Threaded comments, @mentions, file attachments, and real-time updates keep everyone on the same page.</p>
+          <span class="feature-explore">Explore feature →</span>
+        </a>
+        <!-- Card 4: Analytics & Reporting → dashboard.html#reports -->
+        <a href="dashboard.html#reports" class="feature-card feature-card-link reveal" data-feature-link>
+          <div class="feature-icon" style="--ic:#F59E0B;">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 17l4-4 3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="2" width="18" height="18" rx="3" stroke="currentColor" stroke-width="2"/></svg>
+          </div>
+          <h3>Analytics & Reporting</h3>
+          <p>Track velocity, spot bottlenecks, and measure team health with real-time dashboards and exportable reports.</p>
+          <span class="feature-explore">Explore feature →</span>
+        </a>
+        <!-- Card 5: Docs & Knowledge Base — not implemented -->
+        <div class="feature-card reveal">
+          <div class="feature-icon" style="--ic:#EC4899;">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M13 2H6a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V9l-5-7z" stroke="currentColor" stroke-width="2"/><path d="M13 2v7h7" stroke="currentColor" stroke-width="2"/></svg>
+          </div>
+          <div class="feature-card-title-row">
+            <h3>Docs & Knowledge Base</h3>
+            <span class="feature-coming-soon">Coming soon</span>
+          </div>
+          <p>Write, organize, and share team documentation alongside projects — no more hunting through Slack or email.</p>
+        </div>
+        <!-- Card 6: Workflow Automation — not implemented -->
+        <div class="feature-card reveal">
+          <div class="feature-icon" style="--ic:#8B5CF6;">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="2"/><path d="M8 11l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="feature-card-title-row">
+            <h3>Workflow Automation</h3>
+            <span class="feature-coming-soon">Coming soon</span>
+          </div>
+          <p>Build no-code automations that move tasks, send notifications, and update statuses based on triggers you define.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works section" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">How it works</span>
+        <h2 class="section-title">Up and running in minutes</h2>
+        <p class="section-sub">No complex onboarding. No IT ticket. Your team can be fully operational in under 10 minutes.</p>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card reveal">
+          <div class="step-number">01</div>
+          <h3>Create your workspace</h3>
+          <p>Sign up, name your workspace, and invite teammates via email or link. Roles and permissions are set automatically.</p>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-card reveal">
+          <div class="step-number">02</div>
+          <h3>Import or start fresh</h3>
+          <p>Import from Jira, Asana, Trello, or start from one of our 40+ project templates built for real teams.</p>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-card reveal">
+          <div class="step-number">03</div>
+          <h3>Collaborate and ship</h3>
+          <p>Assign tasks, set deadlines, comment in context, and track progress — all in one place. Ship faster, together.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS BAND -->
+  <section class="stats-band">
+    <div class="container stats-grid">
+      <div class="stat-item reveal">
+        <div class="stat-number">40K+</div>
+        <div class="stat-label">Teams worldwide</div>
+      </div>
+      <div class="stat-item reveal">
+        <div class="stat-number">98%</div>
+        <div class="stat-label">Customer satisfaction</div>
+      </div>
+      <div class="stat-item reveal">
+        <div class="stat-number">12M+</div>
+        <div class="stat-label">Tasks completed</div>
+      </div>
+      <div class="stat-item reveal">
+        <div class="stat-number">3x</div>
+        <div class="stat-label">Average productivity gain</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="pricing section" id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Pricing</span>
+        <h2 class="section-title">Simple, transparent pricing</h2>
+        <p class="section-sub">No hidden fees. Scale up or down at any time. All plans include a 14-day free trial.</p>
+      </div>
+      <div class="pricing-toggle">
+        <span class="toggle-opt active" id="toggleMonthly">Monthly</span>
+        <button class="toggle-switch" id="billingToggle" aria-label="Toggle billing">
+          <span class="toggle-knob"></span>
+        </button>
+        <span class="toggle-opt" id="toggleAnnual">Annual <em class="save-tag">Save 20%</em></span>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card reveal">
+          <div class="plan-name">Starter</div>
+          <div class="plan-price"><span class="price-amt" data-monthly="0" data-annual="0">$0</span><span class="price-per">/mo</span></div>
+          <div class="plan-desc">For individuals and small teams just getting started.</div>
+          <button type="button" class="btn-outline btn-full" id="btnStarterPlan">Get started free</button>
+          <ul class="plan-features">
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Up to 5 users</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> 3 active projects</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Kanban & list views</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> 2GB storage</li>
+            <li class="muted"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg> Workflow automation</li>
+            <li class="muted"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/></svg> Advanced reports</li>
+          </ul>
+        </div>
+        <div class="pricing-card popular reveal">
+          <div class="popular-badge">Most popular</div>
+          <div class="plan-name">Pro</div>
+          <div class="plan-price"><span class="price-amt" data-monthly="18" data-annual="14">$18</span><span class="price-per">/user/mo</span></div>
+          <div class="plan-desc">For growing teams that need more power and flexibility.</div>
+          <button type="button" class="btn-primary btn-full" id="btnProTrial">Start free trial</button>
+          <ul class="plan-features">
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Unlimited users</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Unlimited projects</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> All views + Timeline</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> 50GB storage</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Workflow automation</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Advanced reports</li>
+          </ul>
+        </div>
+        <div class="pricing-card reveal">
+          <div class="plan-name">Enterprise</div>
+          <div class="plan-price"><span class="price-amt">Custom</span></div>
+          <div class="plan-desc">For large organizations with advanced security and compliance needs.</div>
+          <button type="button" class="btn-outline btn-full" id="contactSalesBtn">Contact sales</button>
+          <ul class="plan-features">
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Everything in Pro</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> SSO & SAML</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Custom SLA</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Dedicated CSM</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Unlimited storage</li>
+            <li><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Audit logs</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="testimonials section" id="testimonials">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Testimonials</span>
+        <h2 class="section-title">Loved by teams who ship</h2>
+        <p class="section-sub">Don't take our word for it — here's what real users have to say.</p>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card reveal">
+          <div class="stars">★★★★★</div>
+          <p>"Flowsync completely replaced four different tools we were using. Our sprint planning time dropped by 60% in the first month."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:#6C63FF;">SM</div>
+            <div>
+              <div class="author-name">Sarah Mitchell</div>
+              <div class="author-role">VP of Engineering, Nexlayer</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal">
+          <div class="stars">★★★★★</div>
+          <p>"The workflow automation features are a game changer. Tasks get routed, updated, and closed without anyone lifting a finger."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:#3B82F6;">JK</div>
+            <div>
+              <div class="author-name">James Kwon</div>
+              <div class="author-role">Product Lead, Orbit Labs</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal">
+          <div class="stars">★★★★★</div>
+          <p>"Finally, a tool that doesn't need a 3-hour onboarding session. Our team was productive on day one. The UI is just excellent."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:#10B981;">AL</div>
+            <div>
+              <div class="author-name">Aisha Larson</div>
+              <div class="author-role">Head of Operations, Driftworks</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal">
+          <div class="stars">★★★★★</div>
+          <p>"We scaled from 8 to 60 people without changing our workflow. Flowsync grew with us. The enterprise features are solid."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:#F59E0B;">RP</div>
+            <div>
+              <div class="author-name">Raj Patel</div>
+              <div class="author-role">CTO, Buildstack</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal">
+          <div class="stars">★★★★★</div>
+          <p>"The best $18 per user we spend every month. Our designers, devs, and PMs are actually collaborating now. No more silos."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:#EC4899;">TW</div>
+            <div>
+              <div class="author-name">Tina Walsh</div>
+              <div class="author-role">Design Director, Prism Studio</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal">
+          <div class="stars">★★★★★</div>
+          <p>"We migrated from Jira in two hours. Flowsync's import was painless and the Kanban views are just so much more intuitive."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar" style="background:#8B5CF6;">DC</div>
+            <div>
+              <div class="author-name">Daniel Cruz</div>
+              <div class="author-role">Engineering Manager, Vault</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq section" id="faq">
+    <div class="container faq-inner">
+      <div class="section-header">
+        <span class="section-tag">FAQ</span>
+        <h2 class="section-title">Questions? We've got answers.</h2>
+      </div>
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            Is there a free plan?
+            <svg class="faq-icon" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">Yes. Our Starter plan is completely free for up to 5 users with 3 active projects. No credit card required.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            Can I import data from Jira, Asana, or Trello?
+            <svg class="faq-icon" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">Absolutely. Flowsync supports one-click import from Jira, Asana, Trello, Monday.com, and CSV files. Your data migrates in minutes.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            How does the 14-day trial work?
+            <svg class="faq-icon" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">Sign up for any paid plan and get full access for 14 days, no credit card needed. At the end of the trial, you choose whether to continue or downgrade to the free plan.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            Is my data secure?
+            <svg class="faq-icon" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">Yes. All data is encrypted at rest (AES-256) and in transit (TLS 1.3). We're SOC 2 Type II certified and GDPR compliant. Enterprise plans include additional security controls.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            Can I cancel anytime?
+            <svg class="faq-icon" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">Yes. Cancel anytime from your account settings. You keep access until the end of your billing period, and you can export all your data at any time.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            Do you offer discounts for startups or nonprofits?
+            <svg class="faq-icon" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="faq-a">Yes. We offer 50% off for early-stage startups and verified nonprofit organizations. Contact our team to apply.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="cta-band section">
+    <div class="container cta-inner reveal">
+      <div class="cta-glow"></div>
+      <h2>Ready to transform how your team works?</h2>
+      <p>Join 40,000+ teams already using Flowsync to move faster and ship more.</p>
+      <div class="cta-actions">
+        <a href="signup.html" class="btn-primary btn-lg btn-white">Start for free</a>
+        <button type="button" class="btn-ghost-white btn-lg" id="talkToSalesBtn">Talk to sales</button>
+      </div>
+      <p class="cta-note">No credit card · 14-day trial · Cancel anytime</p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="index.html" class="logo">
+          <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="url(#lg2)" class="logo-bg"/><path d="M8 14l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="lg2" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse"><stop stop-color="#6C63FF"/><stop offset="1" stop-color="#3B82F6"/></linearGradient></defs></svg>
+          <span>Flowsync</span>
+        </a>
+        <p>The modern workspace for teams that want to move fast without breaking things.</p>
+        <div class="social-links">
+          <a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M23 3a10.9 10.9 0 01-3.14 1.53A4.48 4.48 0 0012 8v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a href="https://linkedin.com" target="_blank" rel="noopener" aria-label="LinkedIn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/></svg>
+          </a>
+          <a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#faq">FAQ</a>
+          <a href="signup.html">Get started</a>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="mailto:hello@flowsync.io">About</a>
+          <a href="mailto:hello@flowsync.io">Blog</a>
+          <a href="mailto:jobs@flowsync.io">Careers</a>
+          <a href="mailto:press@flowsync.io">Press</a>
+          <a href="mailto:hello@flowsync.io">Contact</a>
+        </div>
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <a href="mailto:support@flowsync.io">Documentation</a>
+          <a href="mailto:support@flowsync.io">API Reference</a>
+          <a href="mailto:support@flowsync.io">Guides</a>
+          <a href="mailto:support@flowsync.io">Status</a>
+          <a href="mailto:support@flowsync.io">Community</a>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="mailto:legal@flowsync.io">Privacy Policy</a>
+          <a href="mailto:legal@flowsync.io">Terms of Service</a>
+          <a href="mailto:legal@flowsync.io">Cookie Policy</a>
+          <a href="mailto:legal@flowsync.io">Security</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container">
+        <span id="footerCopyright">© 2025 Flowsync, Inc. All rights reserved.</span>
+        <span>Made with care for teams everywhere.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="auth-state.js"></script>
+  <script src="theme.js"></script>
+  <script src="app.js"></script>
+
+  <!-- Contact Sales Modal -->
+  <div class="cs-overlay" id="contactSalesOverlay" role="dialog" aria-modal="true" aria-labelledby="csModalTitle" aria-hidden="true">
+    <div class="cs-modal" id="contactSalesModal">
+
+      <!-- Header -->
+      <div class="cs-header">
+        <div>
+          <h2 class="cs-title" id="csModalTitle">Talk to Sales</h2>
+          <p class="cs-subtitle">Tell us about your team and we'll be in touch.</p>
+        </div>
+        <button class="cs-close" id="csClose" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Form (shown first) -->
+      <div id="csFormWrap">
+        <form class="cs-form" id="csForm" novalidate>
+          <div class="cs-row cs-row-2">
+            <div class="cs-field" id="csFieldName">
+              <label for="csName">Full name <span class="cs-req">*</span></label>
+              <input type="text" id="csName" placeholder="Jane Smith" autocomplete="name" maxlength="100"/>
+              <span class="cs-error" id="csErrName"></span>
+            </div>
+            <div class="cs-field" id="csFieldEmail">
+              <label for="csEmail">Work email <span class="cs-req">*</span></label>
+              <input type="email" id="csEmail" placeholder="jane@company.com" autocomplete="email" maxlength="200"/>
+              <span class="cs-error" id="csErrEmail"></span>
+            </div>
+          </div>
+          <div class="cs-row cs-row-2">
+            <div class="cs-field" id="csFieldCompany">
+              <label for="csCompany">Company name <span class="cs-req">*</span></label>
+              <input type="text" id="csCompany" placeholder="Acme Corp" autocomplete="organization" maxlength="120"/>
+              <span class="cs-error" id="csErrCompany"></span>
+            </div>
+            <div class="cs-field">
+              <label for="csTeamSize">Team size</label>
+              <select id="csTeamSize">
+                <option value="">Select…</option>
+                <option value="1-10">1 – 10 people</option>
+                <option value="11-50">11 – 50 people</option>
+                <option value="51-200">51 – 200 people</option>
+                <option value="201-500">201 – 500 people</option>
+                <option value="500+">500+ people</option>
+              </select>
+            </div>
+          </div>
+          <div class="cs-field">
+            <label for="csMessage">Message</label>
+            <textarea id="csMessage" placeholder="Tell us about your use case or any questions you have…" rows="4" maxlength="1000"></textarea>
+          </div>
+          <button type="submit" class="cs-submit" id="csSubmit">
+            <span class="cs-submit-text">Contact Sales</span>
+            <span class="cs-submit-spinner" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="cs-spin">
+                <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+                <path d="M8 2a6 6 0 016 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Confirmation (shown after submit) -->
+      <div id="csConfirm" style="display:none;" class="cs-confirm">
+        <div class="cs-confirm-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="15" stroke="#10B981" stroke-width="2"/>
+            <path d="M9 16l5 5 9-9" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 class="cs-confirm-title">Request received</h3>
+        <p class="cs-confirm-msg">Thanks for reaching out. Your request has been received.</p>
+        <button type="button" class="cs-close-confirm" id="csCloseConfirm">Close</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="contact-sales.js"></script>
+</body>
+</html>
