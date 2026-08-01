@@ -164,70 +164,83 @@ const FlowsyncStore = (function () {
   }
 
   async function fetchTasks(projectId) {
+
+    const reverseStatusMap = {
+      todo: "todo",
+      in_progress: "inprog",
+      done: "done",
+    };
+
     try {
+
       if (projectId) {
-        // Fetch tasks for a specific project
-        // Response envelope: { success, data: { tasks, total, page, ... } }
+
         const response = await ApiClient.get(`/projects/${projectId}/tasks`);
-        const reverseStatusMap = {
-          todo: "todo",
-          in_progress: "inprog",
-          done: "done",
-        };
 
         const fetched = (
           (response.data && response.data.tasks) || response.data || []
         ).map(task => ({
           ...task,
-
-          // Backend -> Frontend
           projectId: task.project,
-
           status: reverseStatusMap[task.status] || task.status,
-
           deadline: task.dueDate
             ? task.dueDate.slice(0, 10)
             : (task.deadline || "")
         }));
-        // Merge into cache: replace tasks for this project, keep others
+
         const existing = tasksCache || load(KEYS.tasks) || [];
+
         tasksCache = [
           ...existing.filter(t => t.projectId !== projectId),
           ...fetched
         ];
+
       } else {
-        // No filter — fetch tasks for every known project in parallel
+
         const projects = getProjects();
+
         if (!projects.length) {
           tasksCache = tasksCache || load(KEYS.tasks) || [];
           return tasksCache;
         }
+
         const results = await Promise.all(
           projects.map(p =>
             ApiClient.get(`/projects/${p.id}/tasks`)
               .then(r =>
                 ((r.data && r.data.tasks) || r.data || []).map(task => ({
-                ...task,
-
-                projectId: task.project,
-
-                status: reverseStatusMap[task.status] || task.status,
-
-                deadline: task.dueDate
+                  ...task,
+                  projectId: task.project,
+                  status: reverseStatusMap[task.status] || task.status,
+                  deadline: task.dueDate
                     ? task.dueDate.slice(0, 10)
                     : (task.deadline || "")
-              }))
+                }))
               )
-              .catch(() => []) // skip projects that fail individually
+              .catch(err => {
+                  console.error("Project:", p.id);
+                  console.error("Error:", err);
+
+                  if (err.data) {
+                      console.error("Server response:", err.data);
+                  }
+
+                  return [];
+              })
           )
         );
+        console.log("Results:", results);
+
         tasksCache = results.flat();
+        console.log("Tasks cache:", tasksCache);
       }
-      save(KEYS.tasks, tasksCache); // Persist to localStorage
+
+      save(KEYS.tasks, tasksCache);
+
       return tasksCache;
+
     } catch (err) {
-      console.error('Failed to fetch tasks:', err);
-      // Fallback to localStorage on error
+      console.error("Failed to fetch tasks:", err);
       tasksCache = tasksCache || load(KEYS.tasks) || [];
       return tasksCache;
     }
