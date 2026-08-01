@@ -24,6 +24,10 @@ const FlowsyncAuth = (function () {
     if (plan === 'pro_trial') {
       entry.trialStartedAt = userData.trialStartedAt || Date.now();
     }
+    // Store JWT access token if provided
+    if (userData.token) {
+      entry.token = userData.token;
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
   }
 
@@ -93,5 +97,29 @@ const FlowsyncAuth = (function () {
     return { label: 'Starter', sublabel: null, isPro: false };
   }
 
-  return { signIn, signOut, getUser, updateUser, isSignedIn, getInitials, getPlanInfo };
+  /** Store JWT access token */
+  function setToken(token) {
+    const current = getUser();
+    if (!current) return false;
+    current.token = token;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+    return true;
+  }
+
+  /** Retrieve JWT access token */
+  function getToken() {
+    const user = getUser();
+    return user ? user.token || null : null;
+  }
+
+  /** Clear JWT access token without signing out */
+  function clearToken() {
+    const current = getUser();
+    if (!current) return false;
+    delete current.token;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+    return true;
+  }
+
+  return { signIn, signOut, getUser, updateUser, isSignedIn, getInitials, getPlanInfo, setToken, getToken, clearToken };
 })();

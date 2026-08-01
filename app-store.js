@@ -101,29 +101,163 @@ const FlowsyncStore = (function () {
   }
 
   /* ── Tasks CRUD ── */
+  let tasksCache = null; // Cache for tasks data
+
   function getTasks(projectId) {
+    // Return cached data if available (synchronous behavior for UI)
+    if (tasksCache) {
+      return projectId ? tasksCache.filter(t => t.projectId === projectId) : tasksCache;
+    }
+    // Fallback to localStorage for initial load
     const all = load(KEYS.tasks) || [];
     return projectId ? all.filter(t => t.projectId === projectId) : all;
   }
-  function getTask(id)   { return getTasks().find(t => t.id === id) || null; }
-  function saveTask(data) {
-    const list = getTasks();
-    if (data.id) {
-      const i = list.findIndex(t => t.id === data.id);
-      if (i >= 0) list[i] = Object.assign({}, list[i], data);
-      else list.unshift(data);
-    } else {
-      data.id = uid(); data.createdAt = Date.now();
-      list.unshift(data);
+
+  async function fetchTasks(projectId) {
+    try {
+      if (projectId) {
+        // Fetch tasks for a specific project
+        // Response envelope: { success, data: { tasks, total, page, ... } }
+        const response = await ApiClient.get(`/projects/${projectId}/tasks`);
+        const fetched = (response.data && response.data.tasks) || response.data || [];
+        // Merge into cache: replace tasks for this project, keep others
+        const existing = tasksCache || load(KEYS.tasks) || [];
+        tasksCache = [
+          ...existing.filter(t => t.projectId !== projectId),
+          ...fetched
+        ];
+      } else {
+        // No filter — fetch tasks for every known project in parallel
+        const projects = getProjects();
+        if (!projects.length) {
+          tasksCache = tasksCache || load(KEYS.tasks) || [];
+          return tasksCache;
+        }
+        const results = await Promise.all(
+          projects.map(p =>
+            ApiClient.get(`/projects/${p.id}/tasks`)
+              .then(r => (r.data && r.data.tasks) || r.data || [])
+              .catch(() => []) // skip projects that fail individually
+          )
+        );
+        tasksCache = results.flat();
+      }
+      save(KEYS.tasks, tasksCache); // Persist to localStorage
+      return tasksCache;
+    } catch (err) {
+      console.error('Failed to fetch tasks:', err);
+      // Fallback to localStorage on error
+      tasksCache = tasksCache || load(KEYS.tasks) || [];
+      return tasksCache;
     }
-    save(KEYS.tasks, list);
-    return data;
   }
-  function deleteTask(id) { save(KEYS.tasks, getTasks().filter(t => t.id !== id)); }
-  function updateTaskStatus(id, status) {
-    const list = getTasks();
-    const t = list.find(t => t.id === id);
-    if (t) { t.status = status; save(KEYS.tasks, list); }
+
+  function getTask(id) {
+    return getTasks().find(t => t.id === id) || null;
+  }
+
+  async function saveTask(data) {
+    try {
+      const isUpdate = !!data.id;
+      const projectId = data.projectId;
+      const endpoint = isUpdate
+        ? `/projects/${projectId}/tasks/${data.id}`
+        : `/projects/${projectId}/tasks`;
+      const method = isUpdate ? 'put' : 'post';
+      
+      const response = await ApiClient[method](endpoint, data);
+      // Response envelope: { success, data: { task } }
+      const savedTask = (response.data && response.data.task) || response.data || response;
+
+      // Update cache
+      if (tasksCache) {
+        if (isUpdate) {
+          const i = tasksCache.findIndex(t => t.id === savedTask.id);
+          if (i >= 0) tasksCache[i] = savedTask;
+          else tasksCache.unshift(savedTask);
+        } else {
+          tasksCache.unshift(savedTask);
+        }
+        save(KEYS.tasks, tasksCache);
+      }
+
+      return savedTask;
+    } catch (err) {
+      console.error('Failed to save task:', err);
+      // Fallback to localStorage-only mode
+      const list = load(KEYS.tasks) || [];
+      if (data.id) {
+        const i = list.findIndex(t => t.id === data.id);
+        if (i >= 0) list[i] = Object.assign({}, list[i], data);
+        else list.unshift(data);
+      } else {
+        data.id = uid();
+        data.createdAt = Date.now();
+        list.unshift(data);
+      }
+      save(KEYS.tasks, list);
+      tasksCache = list;
+      return data;
+    }
+  }
+
+  async function deleteTask(id) {
+    try {
+      const task = getTask(id);
+      const projectId = task?.projectId;
+      await ApiClient.delete(`/projects/${projectId}/tasks/${id}`);
+      
+      // Update cache
+      if (tasksCache) {
+        tasksCache = tasksCache.filter(t => t.id !== id);
+        save(KEYS.tasks, tasksCache);
+      }
+      
+      return true;
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+      // Fallback to localStorage-only mode
+      const list = (load(KEYS.tasks) || []).filter(t => t.id !== id);
+      save(KEYS.tasks, list);
+      tasksCache = list;
+      return false;
+    }
+  }
+
+  async function updateTaskStatus(id, status) {
+    try {
+      const task = getTask(id);
+      const projectId = task?.projectId;
+      // Backend has no PATCH route — use PUT with the full task body + new status
+      const response = await ApiClient.put(
+        `/projects/${projectId}/tasks/${id}`,
+        { ...task, status }
+      );
+      // Response envelope: { success, data: { task } }
+      const updatedTask = (response.data && response.data.task) || response.data || response;
+
+      // Update cache
+      if (tasksCache) {
+        const i = tasksCache.findIndex(t => t.id === id);
+        if (i >= 0) {
+          tasksCache[i] = updatedTask;
+          save(KEYS.tasks, tasksCache);
+        }
+      }
+
+      return updatedTask;
+    } catch (err) {
+      console.error('Failed to update task status:', err);
+      // Fallback to localStorage-only mode
+      const list = load(KEYS.tasks) || [];
+      const t = list.find(t => t.id === id);
+      if (t) {
+        t.status = status;
+        save(KEYS.tasks, list);
+        tasksCache = list;
+      }
+      return t;
+    }
   }
 
   /* ── Team CRUD ── */
@@ -165,7 +299,7 @@ const FlowsyncStore = (function () {
   return {
     uid,
     getProjects, getProject, saveProject, deleteProject,
-    getTasks, getTask, saveTask, deleteTask, updateTaskStatus,
+    getTasks, getTask, saveTask, deleteTask, updateTaskStatus, fetchTasks,
     getTeam, addMember, removeMember,
     getActivity, addActivity,
     getStats

@@ -263,7 +263,67 @@
   /* ══════════════════════════════════════════
      DASHBOARD HOME
   ══════════════════════════════════════════ */
-  function renderDashboard() {
+
+  // Skeleton placeholder while the API call is in-flight
+  function renderDashboardSkeleton() {
+    el('dashStats').innerHTML = [1,2,3,4,5,6].map(() =>
+      `<div class="stat-card" style="opacity:.45;">
+        <div class="stat-card-label" style="background:var(--border);border-radius:4px;height:12px;width:60%;margin-bottom:10px;"></div>
+        <div class="stat-card-value" style="background:var(--border);border-radius:6px;height:32px;width:40%;margin-bottom:8px;"></div>
+        <div class="stat-card-meta" style="background:var(--border);border-radius:4px;height:10px;width:50%;"></div>
+      </div>`
+    ).join('');
+    el('dashActivity').innerHTML =
+      '<div style="padding:20px;color:var(--text-sub);font-size:13px;text-align:center;">Loading activity…</div>';
+  }
+
+  function renderDashboardStats(data) {
+    el('dashStats').innerHTML = `
+      <div class="stat-card accent-violet">
+        <div class="stat-card-label">Total Projects</div>
+        <div class="stat-card-value">${data.totalProjects}</div>
+        <div class="stat-card-meta">all projects</div>
+      </div>
+      <div class="stat-card accent-blue">
+        <div class="stat-card-label">Total Tasks</div>
+        <div class="stat-card-value">${data.totalTasks}</div>
+        <div class="stat-card-meta">across all projects</div>
+      </div>
+      <div class="stat-card accent-green">
+        <div class="stat-card-label">Completed</div>
+        <div class="stat-card-value">${data.completedTasks}</div>
+        <div class="stat-card-meta">${data.completionPercentage}% done</div>
+      </div>
+      <div class="stat-card accent-amber">
+        <div class="stat-card-label">Pending</div>
+        <div class="stat-card-value">${data.pendingTasks}</div>
+        <div class="stat-card-meta">not yet completed</div>
+      </div>
+      <div class="stat-card accent-amber">
+        <div class="stat-card-label">Overdue</div>
+        <div class="stat-card-value">${data.overdueTasks}</div>
+        <div class="stat-card-meta">past due date</div>
+      </div>
+      <div class="stat-card accent-green">
+        <div class="stat-card-label">Completion</div>
+        <div class="stat-card-value">${data.completionPercentage}%</div>
+        <div class="stat-card-meta">overall rate</div>
+      </div>
+    `;
+  }
+
+  function renderDashboardActivity(items) {
+    el('dashActivity').innerHTML = items.length
+      ? items.map(a => `
+          <div class="activity-item">
+            <div class="activity-dot"></div>
+            <div class="activity-text">${escHtml(a.text)}</div>
+            <div class="activity-time">${relTime(new Date(a.time).getTime())}</div>
+          </div>`).join('')
+      : '<div style="padding:20px;color:var(--text-sub);font-size:13px;text-align:center;">No recent activity.</div>';
+  }
+
+  async function renderDashboard() {
 
     // Greeting according to Indian Standard Time (IST)
     const hr = Number(
@@ -291,7 +351,38 @@
 
     el('dashGreeting').textContent = `${greet}, ${displayName}!`;
 
-    // Active project card
+    // Show skeleton while API call is in-flight
+    renderDashboardSkeleton();
+
+    // Fetch dashboard summary from backend
+    try {
+      const response = await ApiClient.get('/dashboard');
+      const data = response.data || response;
+
+      renderDashboardStats(data);
+      renderDashboardActivity(data.recentActivity || []);
+    } catch (err) {
+      // Fallback: derive stats from local store on API failure
+      console.warn('Dashboard API unavailable, falling back to local data:', err.message);
+
+      const gs = FlowsyncStore.getStats();
+      renderDashboardStats({
+        totalProjects:        FlowsyncStore.getProjects().length,
+        totalTasks:           gs.total,
+        completedTasks:       gs.done,
+        pendingTasks:         gs.total - gs.done,
+        overdueTasks:         FlowsyncStore.getTasks().filter(t =>
+                                t.status !== 'done' && isOverdue(t.dueDate)
+                              ).length,
+        completionPercentage: gs.pct,
+      });
+      const localActs = FlowsyncStore.getActivity().slice(0, 6);
+      renderDashboardActivity(
+        localActs.map(a => ({ text: a.text, time: new Date(a.time).toISOString() }))
+      );
+    }
+
+    // Active project card — always from local store (not changed)
     const activeProjects = FlowsyncStore.getProjects().filter(p => p.status === 'active');
     const proj = activeProjects[0];
     if (proj) {
@@ -314,13 +405,7 @@
       el('dashProjectBody').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📁</div><h3>No active projects</h3><p>Create a project to get started.</p></div>';
     }
 
-    // Activity
-    const acts = FlowsyncStore.getActivity().slice(0, 6);
-    el('dashActivity').innerHTML = acts.length
-      ? acts.map(a => `<div class="activity-item"><div class="activity-dot"></div><div class="activity-text">${escHtml(a.text)}</div><div class="activity-time">${relTime(a.time)}</div></div>`).join('')
-      : '<div style="padding:20px;color:var(--text-sub);font-size:13px;text-align:center;">No recent activity.</div>';
-
-    // Mini kanban
+    // Mini kanban — always from local store (not changed)
     const allTasks = FlowsyncStore.getTasks();
     const todo   = allTasks.filter(t => t.status === 'todo').slice(0, 3);
     const inprog = allTasks.filter(t => t.status === 'inprog').slice(0, 3);
@@ -446,7 +531,7 @@
     el('taskProjectFilter').innerHTML = filterOpts;
   }
 
-  function renderTasks() {
+  function renderTasksFromCache() {
     populateProjectSelects();
     const filterPid = el('taskProjectFilter').value;
     const allTasks  = FlowsyncStore.getTasks(filterPid || undefined);
@@ -488,6 +573,24 @@
       col('done','Done','done');
   }
 
+  async function renderTasks() {
+    // Show a lightweight loading state while fetching
+    el('tasksKanban').innerHTML = '<div style="padding:32px;color:var(--text-sub);font-size:13px;text-align:center;">Loading tasks…</div>';
+    const filterPid = el('taskProjectFilter').value;
+    try {
+      await FlowsyncStore.fetchTasks(filterPid || undefined);
+      renderTasksFromCache();
+    } catch (err) {
+      el('tasksKanban').innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-state-icon">⚠️</div>
+          <h3>Could not load tasks</h3>
+          <p>Check your connection and try again.</p>
+          <button class="btn-sm-outline" style="margin-top:12px;" onclick="renderTasks()">Retry</button>
+        </div>`;
+    }
+  }
+
   el('taskProjectFilter').addEventListener('change', renderTasks);
 
   function openTaskModal(id) {
@@ -504,7 +607,7 @@
   }
 
   el('newTaskBtn').addEventListener('click', () => openTaskModal());
-  el('saveTaskBtn').addEventListener('click', () => {
+  el('saveTaskBtn').addEventListener('click', async () => {
     const title = el('tTitle').value.trim();
     if (!title)              { el('tTitle').focus(); toast('Task title is required.', 'error'); return; }
     if (!el('tProject').value) { toast('Please select a project.', 'error'); return; }
@@ -513,28 +616,54 @@
       status:    el('tStatus').value,
       priority:  el('tPriority').value,
       dueDate:   el('tDue').value || '' };
-    FlowsyncStore.saveTask(data);
-    FlowsyncStore.addActivity(`Task "${title}" ${editingTaskId ? 'updated' : 'created'}.`);
-    closeModal('taskModal');
-    toast(editingTaskId ? 'Task updated.' : 'Task created.');
-    renderTasks();
+    const saveBtn = el('saveTaskBtn');
+    saveBtn.disabled = true;
+    try {
+      await FlowsyncStore.saveTask(data);
+      FlowsyncStore.addActivity(`Task "${title}" ${editingTaskId ? 'updated' : 'created'}.`);
+      closeModal('taskModal');
+      toast(editingTaskId ? 'Task updated.' : 'Task created.');
+      renderTasksFromCache();
+    } catch (err) {
+      toast('Failed to save task. Please try again.', 'error');
+    } finally {
+      saveBtn.disabled = false;
+    }
   });
 
   App.editTask   = (id) => openTaskModal(id);
-  App.deleteTask = (id) => {
+  App.deleteTask = async (id) => {
     const t = FlowsyncStore.getTask(id);
     if (!t) return;
     if (!confirm(`Delete task "${t.title}"?`)) return;
-    FlowsyncStore.deleteTask(id);
-    toast('Task deleted.');
-    renderTasks();
+    try {
+      await FlowsyncStore.deleteTask(id);
+      toast('Task deleted.');
+      renderTasksFromCache();
+    } catch (err) {
+      const msg = err.status === 403
+        ? 'You don\'t have permission to delete this task.'
+        : err.status === 404
+          ? 'Task not found — it may have already been deleted.'
+          : 'Failed to delete task. Please try again.';
+      toast(msg, 'error');
+    }
   };
-  App.moveTask   = (id, status) => {
-    FlowsyncStore.updateTaskStatus(id, status);
+  App.moveTask   = async (id, status) => {
     const t = FlowsyncStore.getTask(id);
-    FlowsyncStore.addActivity(`Task "${t?.title}" moved to ${statusLabel(status)}.`);
-    toast(`Moved to ${statusLabel(status)}.`);
-    renderTasks();
+    try {
+      await FlowsyncStore.updateTaskStatus(id, status);
+      FlowsyncStore.addActivity(`Task "${t?.title}" moved to ${statusLabel(status)}.`);
+      toast(`Moved to ${statusLabel(status)}.`);
+      renderTasksFromCache();
+    } catch (err) {
+      const msg = err.status === 403
+        ? 'You don\'t have permission to update this task.'
+        : err.status === 404
+          ? 'Task not found — it may have been deleted.'
+          : `Failed to move task. Please try again.`;
+      toast(msg, 'error');
+    }
   };
 
 

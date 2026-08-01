@@ -1,6 +1,5 @@
 /* ============================================================
    FLOWSYNC — Auth Pages JavaScript
-   Frontend-only / demo mode. No real authentication.
    ============================================================ */
 
 (function () {
@@ -75,19 +74,13 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   }
 
-  /* ── Utility: simulate async submit (demo) ── */
-  function simulateSubmit(btn, onSuccess) {
+  /* ── Utility: set button loading state ── */
+  function setButtonLoading(btn, loading) {
     const text    = btn.querySelector('.btn-text');
     const spinner = btn.querySelector('.btn-spinner');
-    btn.disabled  = true;
-    text.style.display    = 'none';
-    spinner.style.display = 'inline-flex';
-    setTimeout(() => {
-      btn.disabled = false;
-      text.style.display    = '';
-      spinner.style.display = 'none';
-      onSuccess();
-    }, 1400);
+    btn.disabled  = loading;
+    if (text)    text.style.display    = loading ? 'none' : '';
+    if (spinner) spinner.style.display = loading ? 'inline-flex' : 'none';
   }
 
   /* ── Password show/hide toggle ── */
@@ -174,21 +167,34 @@
 
       if (!valid) return;
 
-      simulateSubmit(document.getElementById('submitBtn'), () => {
-        // Demo: accept any credentials — persist session then navigate
-        // Preserve existing plan if the user already has one stored
-        const existing = FlowsyncAuth.getUser();
-        FlowsyncAuth.signIn({
-          name:           email.split('@')[0],
-          email,
-          plan:           existing?.plan || 'starter',
-          trialStartedAt: existing?.trialStartedAt
+      const submitBtn = document.getElementById('submitBtn');
+      setButtonLoading(submitBtn, true);
+
+      ApiClient.post('/auth/signin', { email, password })
+        .then((data) => {
+          // Response envelope: { success, data: { user, accessToken } }
+          const payload = data.data || data;
+          const existing = FlowsyncAuth.getUser();
+          FlowsyncAuth.signIn({
+            name:           payload.user?.name  || email.split('@')[0],
+            email:          payload.user?.email || email,
+            plan:           payload.user?.plan  || existing?.plan || 'starter',
+            trialStartedAt: payload.user?.trialStartedAt || existing?.trialStartedAt,
+            token:          payload.accessToken
+          });
+          if (payload.accessToken) {
+            FlowsyncAuth.setToken(payload.accessToken);
+          }
+          showToast('Signed in successfully! Redirecting…', 'success');
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+        })
+        .catch((err) => {
+          setButtonLoading(submitBtn, false);
+          const msg = err.status === 401
+            ? 'Incorrect email or password.'
+            : err.message || 'Sign-in failed. Please try again.';
+          showToast(msg, 'error');
         });
-        showToast('Signed in successfully! Redirecting…', 'success');
-        setTimeout(() => {
-          window.location.href = 'dashboard.html';
-        }, 1200);
-      });
     });
   }
 
@@ -275,21 +281,41 @@
 
       if (!valid) return;
 
-      simulateSubmit(document.getElementById('submitBtn'), () => {
-        // Read the plan the user selected on the pricing page (if any)
-        const pendingPlan = sessionStorage.getItem('flowsync_pending_plan') || 'starter';
-        sessionStorage.removeItem('flowsync_pending_plan');
+      const submitBtn = document.getElementById('submitBtn');
+      setButtonLoading(submitBtn, true);
 
-        const signInData = { name, email, plan: pendingPlan };
-        if (pendingPlan === 'pro_trial') {
-          signInData.trialStartedAt = Date.now();
-        }
-        FlowsyncAuth.signIn(signInData);
-        showToast('Account created! Welcome to Flowsync.', 'success');
-        setTimeout(() => {
-          window.location.href = 'dashboard.html';
-        }, 1200);
-      });
+      // Read the plan the user selected on the pricing page (if any)
+      const pendingPlan = sessionStorage.getItem('flowsync_pending_plan') || 'starter';
+
+      ApiClient.post('/auth/signup', { name, email, password, plan: pendingPlan })
+        .then((data) => {
+          sessionStorage.removeItem('flowsync_pending_plan');
+
+          // Response envelope: { success, data: { user, accessToken } }
+          const payload = data.data || data;
+          const signInData = {
+            name:  payload.user?.name  || name,
+            email: payload.user?.email || email,
+            plan:  payload.user?.plan  || pendingPlan,
+            token: payload.accessToken
+          };
+          if (signInData.plan === 'pro_trial') {
+            signInData.trialStartedAt = payload.user?.trialStartedAt || Date.now();
+          }
+          FlowsyncAuth.signIn(signInData);
+          if (payload.accessToken) {
+            FlowsyncAuth.setToken(payload.accessToken);
+          }
+          showToast('Account created! Welcome to Flowsync.', 'success');
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+        })
+        .catch((err) => {
+          setButtonLoading(submitBtn, false);
+          const msg = err.status === 409
+            ? 'An account with this email already exists.'
+            : err.message || 'Sign-up failed. Please try again.';
+          showToast(msg, 'error');
+        });
     });
   }
 
@@ -315,11 +341,14 @@
       }
       clearError('emailGroup');
 
-      simulateSubmit(document.getElementById('submitBtn'), () => {
+      const forgotBtn = document.getElementById('submitBtn');
+      setButtonLoading(forgotBtn, true);
+      setTimeout(() => {
+        setButtonLoading(forgotBtn, false);
         document.getElementById('step1').style.display = 'none';
         document.getElementById('sentEmail').textContent = email;
         document.getElementById('step2').style.display = 'block';
-      });
+      }, 1400);
     });
 
     const resendBtn = document.getElementById('resendBtn');
