@@ -1,272 +1,299 @@
-# 🚀 FlowSync
+# 🚀 FlowSync – Full-Stack SaaS Project Management Platform
 
-<div align="center">
+FlowSync is a **full-stack SaaS project management platform** designed to help individuals and teams efficiently organize projects, manage tasks, and monitor progress through an intuitive dashboard.
 
-FlowSync is a modern SaaS project management platform that helps teams organize projects, manage tasks, collaborate efficiently, and streamline workflows through an intuitive workspace.
-
-### Modern SaaS Project Management Platform
-
-Organize projects, manage tasks, collaborate with your team, and streamline workflows through a clean, responsive, and modern user experience.
-
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![Responsive](https://img.shields.io/badge/Responsive-Yes-success?style=for-the-badge)
-![Theme](https://img.shields.io/badge/Light%20%26%20Dark-Supported-8A2BE2?style=for-the-badge)
-
-</div>
+The application features **secure JWT-based authentication**, **RESTful APIs**, **MongoDB persistence**, and a responsive frontend with a clean, modern interface supporting both **Light** and **Dark** themes.
 
 ---
 
-## 📖 Overview
+## 📸 Preview
 
-FlowSync is a modern SaaS-style project management platform built with **HTML, CSS, and JavaScript**.
-
-It provides an intuitive workspace where teams can organize projects, collaborate efficiently, manage tasks, and improve productivity through a responsive and user-friendly interface.
-
-The project focuses on delivering a clean SaaS experience with beautiful UI, authentication pages, dashboard management, user profiles, customizable themes, and responsive layouts.
+> **Screenshots**
+>
+> Add screenshots here after deployment.
+>
+> - Landing Page
+> - Dashboard
+> - Project Management
+> - Task Board
+> - Authentication
+> - Light & Dark Mode
 
 ---
 
 # ✨ Features
 
-## 🏠 Landing Page
+## 🔐 Authentication
 
-- Modern SaaS homepage
-- Professional hero section
-- Feature showcase
-- Pricing section
-- Testimonials
-- FAQ section
-- Call-to-action sections
-- Responsive navigation
-
----
-
-## 📋 Project Management
-
-- Smart task management
-- Project dashboard
-- Workflow automation
-- Kanban & timeline workflow
-- Analytics & reporting
-- Documentation & knowledge base
+- User Registration
+- User Login
+- JWT Authentication
+- Refresh Token Support
+- Protected Routes
+- Secure Logout
+- Session Persistence
 
 ---
 
-## 👥 User Experience
+## 📊 Dashboard
 
-- Responsive layout
-- Mobile-friendly navigation
-- Smooth animations
-- Professional SaaS UI
-- Modern typography
-- Interactive components
-
----
-
-## 👤 Authentication
-
-- Sign Up
-- Sign In
-- Forgot Password
-- Client-side authentication flow
+- Total Projects
+- Total Tasks
+- Completed Tasks
+- Pending Tasks
+- Overdue Tasks
+- Completion Percentage
+- Recent Activity Feed
+- Personalized Greeting
 
 ---
 
-## ⚙️ User Account
+## 📁 Project Management
 
-- User profile page
-- Settings page
-- Personalized dashboard
-- Account management
-
----
-
-## 🌗 Theme Support
-
-FlowSync includes complete theme support.
-
-### 🌙 Dark Theme
-
-- Premium dark interface
-- Modern gradients
-- High contrast UI
-
-### ☀️ Light Theme
-
-- Clean creamy-white design
-- Sea-green accent palette
-- Consistent branding
-- Optimized readability
-
-Theme preferences are automatically saved using Local Storage.
+- Create Projects
+- Edit Projects
+- Delete Projects
+- Project Status Tracking
+- Project Statistics
 
 ---
 
-# 📁 Project Structure
+## ✅ Task Management
+
+- Create Tasks
+- Edit Tasks
+- Delete Tasks
+- Task Priorities
+- Task Status Management
+- Due Dates
+- Labels
+- Search
+- Filtering
+- Pagination
+- Kanban-style Workflow
+
+---
+
+## 🎨 User Experience
+
+- Responsive Design
+- Light / Dark Theme
+- Modern UI
+- Loading States
+- Empty States
+- User-friendly Error Messages
+- Toast Notifications
+
+---
+
+## 🔒 Production Features
+
+- Helmet Security
+- Rate Limiting
+- Request Validation
+- Centralized Error Handling
+- Request Logging
+- Environment Validation
+- Winston Logger
+- MongoDB Indexes
+
+---
+
+# 🏗️ Tech Stack
+
+## Frontend
+
+- HTML5
+- CSS3
+- JavaScript (ES6)
+- Local Storage
+- Fetch API
+
+## Backend
+
+- Node.js
+- Express.js
+- TypeScript
+
+## Database
+
+- MongoDB
+- Mongoose
+
+## Authentication
+
+- JWT (JSON Web Tokens)
+- Refresh Tokens
+- HTTP-only Cookies
+
+## Security
+
+- Helmet
+- Express Rate Limit
+- Password Hashing (bcrypt)
+- CORS
+
+---
+
+# 📂 Project Structure
 
 ```text
-flowsync-saas/
-
-├── index.html
+FlowSync
+│
+├── server
+│   ├── src
+│   │   ├── config
+│   │   ├── controllers
+│   │   ├── middleware
+│   │   ├── models
+│   │   ├── routes
+│   │   ├── services
+│   │   ├── types
+│   │   └── utils
+│   │
+│   ├── package.json
+│   └── tsconfig.json
+│
 ├── dashboard.html
-├── profile.html
-├── settings.html
-├── signin.html
-├── signup.html
-├── forgot-password.html
-│
-├── styles.css
-├── dashboard.css
-├── profile.css
-├── auth.css
-├── navbar-auth.css
-├── theme.css
-│
-├── app.js
 ├── dashboard.js
-├── profile.js
-├── settings.js
+├── app-store.js
+├── api-client.js
 ├── auth.js
 ├── auth-state.js
-├── app-store.js
-├── contact-sales.js
+├── profile.html
+├── profile.js
+├── settings.html
+├── settings.js
 ├── theme.js
-│
 └── README.md
 ```
 
 ---
 
-# 🛠 Tech Stack
-
-### Frontend
-
-- HTML5
-- CSS3
-- JavaScript (ES6)
-
-### UI
-
-- CSS Variables
-- Flexbox
-- CSS Grid
-- Responsive Design
-- Local Storage
-
----
-
-# 🚀 Getting Started
+# 🛠️ Installation
 
 ## Clone the repository
 
 ```bash
 git clone https://github.com/ShreyaBaidya/flowsync-saas.git
-```
 
-## Open the project
-
-Simply open:
-
-```text
-index.html
-```
-
-in your browser.
-
-No additional installation or build tools are required.
-
----
-
-# 📸 Screenshots
-
-Add screenshots of the following pages:
-
-- Landing Page
-- Dashboard
-- Profile
-- Settings
-- Authentication Pages
-
-Example folder:
-
-```text
-screenshots/
-    landing-page.png
-    dashboard.png
-    profile.png
-    settings.png
-```
-
-Then embed them like:
-
-```md
-## Landing Page
-
-![Landing Page](screenshots/landing-page.png)
+cd flowsync-saas
 ```
 
 ---
 
-# 🌟 Highlights
+## Backend Setup
 
-- Modern SaaS Design
-- Professional Landing Page
-- Responsive Layout
-- Dashboard Interface
-- Authentication Pages
-- User Profile
-- Settings Management
-- Theme Switching
-- Mobile Navigation
-- Interactive UI Components
-- Clean Project Structure
+```bash
+cd server
+
+npm install
+```
+
+Create a `.env` file inside the `server` directory.
+
+Example:
+
+```env
+PORT=5000
+
+MONGODB_URI=mongodb://127.0.0.1:27017/flowsync
+
+JWT_ACCESS_SECRET=your_access_secret
+
+JWT_REFRESH_SECRET=your_refresh_secret
+```
+
+Start the backend:
+
+```bash
+npm run dev
+```
 
 ---
 
-# 🔮 Future Enhancements
+## Frontend
 
-- Backend Integration
-- Database Support
-- Real User Authentication
-- Team Workspaces
+Open the frontend using **VS Code Live Server** or any static server.
+
+Backend runs on:
+
+```
+http://localhost:5000
+```
+
+---
+
+# 📡 API Overview
+
+## Authentication
+
+| Method | Endpoint |
+|---------|----------|
+| POST | /api/v1/auth/signup |
+| POST | /api/v1/auth/signin |
+| POST | /api/v1/auth/signout |
+| POST | /api/v1/auth/refresh |
+| GET | /api/v1/auth/me |
+
+---
+
+## Dashboard
+
+| Method | Endpoint |
+|---------|----------|
+| GET | /api/v1/dashboard |
+
+---
+
+## Projects
+
+| Method | Endpoint |
+|---------|----------|
+| GET | /api/v1/projects |
+| POST | /api/v1/projects |
+| GET | /api/v1/projects/:id |
+| PUT | /api/v1/projects/:id |
+| DELETE | /api/v1/projects/:id |
+
+---
+
+## Tasks
+
+| Method | Endpoint |
+|---------|----------|
+| GET | /api/v1/projects/:projectId/tasks |
+| POST | /api/v1/projects/:projectId/tasks |
+| GET | /api/v1/projects/:projectId/tasks/:id |
+| PUT | /api/v1/projects/:projectId/tasks/:id |
+| DELETE | /api/v1/projects/:projectId/tasks/:id |
+
+---
+
+# 🔐 Security Features
+
+- JWT Authentication
+- Refresh Token Management
+- Password Hashing using bcrypt
+- Helmet Security Headers
+- Rate Limiting
+- CORS Protection
+- Centralized Error Handling
+- Environment Variable Validation
+
+---
+
+# 🚀 Future Improvements
+
+- Team Collaboration
+- Drag-and-Drop Kanban Board
+- Email Verification
+- Password Reset
+- Task Attachments
 - Notifications
 - Calendar Integration
-- Task Reminders
-- File Uploads
-- Activity Timeline
-- API Integration
-- Drag-and-Drop Kanban
-- Role-Based Access Control
-
----
-
-# 🤝 Contributing
-
-Contributions are welcome.
-
-1. Fork the repository
-
-2. Create a new branch
-
-```bash
-git checkout -b feature/your-feature
-```
-
-3. Commit your changes
-
-```bash
-git commit -m "Add new feature"
-```
-
-4. Push your branch
-
-```bash
-git push origin feature/your-feature
-```
-
-5. Open a Pull Request
+- Docker Support
+- CI/CD Pipeline
 
 ---
 
@@ -274,11 +301,13 @@ git push origin feature/your-feature
 
 **Shreya Baidya**
 
-GitHub:
-https://github.com/ShreyaBaidya
+B.Tech – Electronics and Communication Engineering  
+IIT (ISM) Dhanbad
+
+GitHub: https://github.com/ShreyaBaidya
 
 ---
 
-## ⭐ Support
+# 📄 License
 
-If you like this project, consider giving it a ⭐ on GitHub.
+This project is licensed under the MIT License.
