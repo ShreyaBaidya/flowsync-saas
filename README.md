@@ -307,7 +307,3 @@ IIT (ISM) Dhanbad
 GitHub: https://github.com/ShreyaBaidya
 
 ---
-
-# 📄 License
-
-This project is licensed under the MIT License.
