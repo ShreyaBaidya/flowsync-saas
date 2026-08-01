@@ -252,6 +252,7 @@
 
     signupForm.addEventListener('submit', (e) => {
       e.preventDefault();
+      console.count("SIGNIN SUBMIT");
       let valid = true;
 
       const name     = document.getElementById('fullName').value.trim();
@@ -331,6 +332,7 @@
 
     forgotForm.addEventListener('submit', (e) => {
       e.preventDefault();
+
       const email = document.getElementById('email').value.trim();
 
       if (!email) {

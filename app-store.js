@@ -27,37 +27,11 @@ const FlowsyncStore = (function () {
 
   /* ── seed demo data on first use ── */
   function seed() {
-    if (load(KEYS.projects)) return; // already seeded
+    // Projects now come from the backend — only seed local-only data
+    if (load(KEYS.team)) return; // already seeded
 
     const now = Date.now();
     const day = 86400000;
-
-    const p1 = uid(), p2 = uid(), p3 = uid();
-
-    const projects = [
-      { id: p1, name: 'Q3 Product Launch', description: 'End-to-end launch of the new dashboard feature set.',
-        status: 'active', deadline: new Date(now + 18 * day).toISOString().slice(0,10), createdAt: now - 10*day },
-      { id: p2, name: 'Mobile App Redesign', description: 'Refresh the iOS and Android apps to match the new brand.',
-        status: 'active', deadline: new Date(now + 35 * day).toISOString().slice(0,10), createdAt: now - 5*day },
-      { id: p3, name: 'API v2 Migration', description: 'Migrate all internal services to the new REST API.',
-        status: 'completed', deadline: new Date(now - 3 * day).toISOString().slice(0,10), createdAt: now - 30*day }
-    ];
-
-    const tasks = [
-      { id: uid(), projectId: p1, title: 'Research competitors', status: 'done',     priority: 'medium', dueDate: new Date(now - 5*day).toISOString().slice(0,10),  createdAt: now - 9*day },
-      { id: uid(), projectId: p1, title: 'Define user personas',  status: 'done',     priority: 'high',   dueDate: new Date(now - 3*day).toISOString().slice(0,10),  createdAt: now - 8*day },
-      { id: uid(), projectId: p1, title: 'Design landing page',   status: 'inprog',   priority: 'high',   dueDate: new Date(now + 2*day).toISOString().slice(0,10),  createdAt: now - 4*day },
-      { id: uid(), projectId: p1, title: 'Write API docs',        status: 'inprog',   priority: 'medium', dueDate: new Date(now + 4*day).toISOString().slice(0,10),  createdAt: now - 3*day },
-      { id: uid(), projectId: p1, title: 'Set up CI/CD pipeline', status: 'done',     priority: 'high',   dueDate: new Date(now - 7*day).toISOString().slice(0,10),  createdAt: now - 9*day },
-      { id: uid(), projectId: p1, title: 'Write blog post',       status: 'todo',     priority: 'low',    dueDate: new Date(now + 8*day).toISOString().slice(0,10),  createdAt: now - 1*day },
-      { id: uid(), projectId: p1, title: 'Record demo video',     status: 'todo',     priority: 'medium', dueDate: new Date(now + 10*day).toISOString().slice(0,10), createdAt: now - 1*day },
-      { id: uid(), projectId: p2, title: 'Wireframe new nav',     status: 'done',     priority: 'high',   dueDate: new Date(now - 2*day).toISOString().slice(0,10),  createdAt: now - 5*day },
-      { id: uid(), projectId: p2, title: 'Redesign home screen',  status: 'inprog',   priority: 'high',   dueDate: new Date(now + 6*day).toISOString().slice(0,10),  createdAt: now - 4*day },
-      { id: uid(), projectId: p2, title: 'User testing sessions', status: 'todo',     priority: 'medium', dueDate: new Date(now + 14*day).toISOString().slice(0,10), createdAt: now - 2*day },
-      { id: uid(), projectId: p3, title: 'Audit existing API',    status: 'done',     priority: 'high',   dueDate: new Date(now - 20*day).toISOString().slice(0,10), createdAt: now - 30*day },
-      { id: uid(), projectId: p3, title: 'Write migration guide', status: 'done',     priority: 'medium', dueDate: new Date(now - 10*day).toISOString().slice(0,10), createdAt: now - 20*day },
-      { id: uid(), projectId: p3, title: 'Deprecate v1 endpoints',status: 'done',     priority: 'high',   dueDate: new Date(now - 4*day).toISOString().slice(0,10),  createdAt: now - 15*day }
-    ];
 
     const team = [
       { id: uid(), name: 'Sarah Mitchell', email: 'sarah@nexlayer.io',   role: 'Admin',   avatar: 'SM', addedAt: now - 20*day },
@@ -73,31 +47,107 @@ const FlowsyncStore = (function () {
       { id: uid(), text: 'API v2 Migration marked as completed',            time: now - 3 * day }
     ];
 
-    save(KEYS.projects, projects);
-    save(KEYS.tasks, tasks);
     save(KEYS.team, team);
     save(KEYS.activity, activity);
   }
 
   /* ── Projects CRUD ── */
-  function getProjects()    { return load(KEYS.projects) || []; }
-  function getProject(id)   { return getProjects().find(p => p.id === id) || null; }
-  function saveProject(data) {
-    const list = getProjects();
-    if (data.id) {
-      const i = list.findIndex(p => p.id === data.id);
-      if (i >= 0) list[i] = Object.assign({}, list[i], data);
-      else list.unshift(data);
-    } else {
-      data.id = uid(); data.createdAt = Date.now();
-      list.unshift(data);
-    }
-    save(KEYS.projects, list);
-    return data;
+  let projectsCache = null; // In-memory cache — populated by fetchProjects()
+
+  // Synchronous read from cache (used by all UI rendering and getStats)
+  function getProjects() {
+    return projectsCache || [];
   }
-  function deleteProject(id) {
-    save(KEYS.projects, getProjects().filter(p => p.id !== id));
-    save(KEYS.tasks, getTasks().filter(t => t.projectId !== id));
+
+  function getProject(id) {
+    return getProjects().find(p => p.id === id) || null;
+  }
+
+  // Fetch all projects from the backend and populate the cache
+  async function fetchProjects() {
+    try {
+      // Request all projects — backend returns up to 100 per page; sufficient for this app
+      const response = await ApiClient.get('/projects?limit=100');
+      // Response envelope: { success, data: { projects, total, ... } }
+      const projects = (response.data && response.data.projects) || response.data || [];
+      projectsCache = projects.map(_normaliseProject);
+      return projectsCache;
+    } catch (err) {
+      console.error('Failed to fetch projects:', err);
+      // Re-throw so callers can show an error state
+      throw err;
+    }
+  }
+
+  // Create or update a project via the API
+  async function saveProject(data) {
+    const isUpdate = !!data.id;
+    const endpoint = isUpdate ? `/projects/${data.id}` : '/projects';
+    const method   = isUpdate ? 'put' : 'post';
+
+    // Map frontend field names to backend field names
+    const body = {
+      name:        data.name,
+      description: data.description || '',
+      status:      data.status      || 'active',
+      priority:    data.priority    || 'medium',
+      dueDate:     data.deadline    || null,   // frontend uses 'deadline', backend uses 'dueDate'
+    };
+
+    const response  = await ApiClient[method](endpoint, body);
+    // Response envelope: { success, data: { project } }
+    const saved = (response.data && response.data.project) || response.data || response;
+
+    // Normalise: expose dueDate as deadline so the rest of the UI works unchanged
+    const normalised = _normaliseProject(saved);
+
+    // Update cache
+    if (projectsCache) {
+      if (isUpdate) {
+        const i = projectsCache.findIndex(p => p.id === normalised.id);
+        if (i >= 0) projectsCache[i] = normalised;
+        else projectsCache.unshift(normalised);
+      } else {
+        projectsCache.unshift(normalised);
+      }
+    }
+
+    return normalised;
+  }
+
+  // Delete a project and remove its tasks from the task cache
+  async function deleteProject(id) {
+    await ApiClient.delete(`/projects/${id}`);
+
+    // Remove from project cache
+    if (projectsCache) {
+      projectsCache = projectsCache.filter(p => p.id !== id);
+    }
+
+    // Purge tasks that belong to this project from the task cache
+    if (tasksCache) {
+      tasksCache = tasksCache.filter(t => t.projectId !== id);
+      save(KEYS.tasks, tasksCache);
+    }
+  }
+
+  // Normalise a SafeProject from the backend to match the frontend shape:
+  //   backend uses 'dueDate' (ISO string) — frontend uses 'deadline' (YYYY-MM-DD)
+  function _normaliseProject(p) {
+    return {
+      id:          p.id,
+      name:        p.name,
+      description: p.description || '',
+      status:      p.status,
+      priority:    p.priority,
+      // Convert ISO dueDate → YYYY-MM-DD for the deadline field the UI expects
+      deadline:    p.dueDate ? p.dueDate.slice(0, 10) : (p.deadline || ''),
+      members:     p.members  || [],
+      tags:        p.tags     || [],
+      color:       p.color    || '#6C63FF',
+      createdAt:   p.createdAt,
+      updatedAt:   p.updatedAt,
+    };
   }
 
   /* ── Tasks CRUD ── */
@@ -119,7 +169,26 @@ const FlowsyncStore = (function () {
         // Fetch tasks for a specific project
         // Response envelope: { success, data: { tasks, total, page, ... } }
         const response = await ApiClient.get(`/projects/${projectId}/tasks`);
-        const fetched = (response.data && response.data.tasks) || response.data || [];
+        const reverseStatusMap = {
+          todo: "todo",
+          in_progress: "inprog",
+          done: "done",
+        };
+
+        const fetched = (
+          (response.data && response.data.tasks) || response.data || []
+        ).map(task => ({
+          ...task,
+
+          // Backend -> Frontend
+          projectId: task.project,
+
+          status: reverseStatusMap[task.status] || task.status,
+
+          deadline: task.dueDate
+            ? task.dueDate.slice(0, 10)
+            : (task.deadline || "")
+        }));
         // Merge into cache: replace tasks for this project, keep others
         const existing = tasksCache || load(KEYS.tasks) || [];
         tasksCache = [
@@ -136,7 +205,19 @@ const FlowsyncStore = (function () {
         const results = await Promise.all(
           projects.map(p =>
             ApiClient.get(`/projects/${p.id}/tasks`)
-              .then(r => (r.data && r.data.tasks) || r.data || [])
+              .then(r =>
+                ((r.data && r.data.tasks) || r.data || []).map(task => ({
+                ...task,
+
+                projectId: task.project,
+
+                status: reverseStatusMap[task.status] || task.status,
+
+                deadline: task.dueDate
+                    ? task.dueDate.slice(0, 10)
+                    : (task.deadline || "")
+              }))
+              )
               .catch(() => []) // skip projects that fail individually
           )
         );
@@ -165,9 +246,35 @@ const FlowsyncStore = (function () {
         : `/projects/${projectId}/tasks`;
       const method = isUpdate ? 'put' : 'post';
       
-      const response = await ApiClient[method](endpoint, data);
+      const statusMap = {
+        todo: 'todo',
+        inprog: 'in_progress',
+        done: 'done',
+      };
+
+      const payload = {
+        ...data,
+        status: statusMap[data.status] || data.status,
+      };
+
+      const response = await ApiClient[method](endpoint, payload);
+
       // Response envelope: { success, data: { task } }
       const savedTask = (response.data && response.data.task) || response.data || response;
+      savedTask.projectId = savedTask.project;
+
+      // Convert backend status → frontend status
+      const reverseStatusMap = {
+        todo: "todo",
+        in_progress: "inprog",
+        done: "done",
+      };
+      savedTask.deadline = savedTask.dueDate
+      ? savedTask.dueDate.slice(0, 10)
+      : (savedTask.deadline || "");
+
+      savedTask.status =
+        reverseStatusMap[savedTask.status] || savedTask.status;
 
       // Update cache
       if (tasksCache) {
@@ -229,13 +336,36 @@ const FlowsyncStore = (function () {
       const task = getTask(id);
       const projectId = task?.projectId;
       // Backend has no PATCH route — use PUT with the full task body + new status
+      const statusMap = {
+        todo: "todo",
+        inprog: "in_progress",
+        done: "done",
+      };
+
       const response = await ApiClient.put(
         `/projects/${projectId}/tasks/${id}`,
-        { ...task, status }
+        {
+          ...task,
+          status: statusMap[status] || status,
+        }
       );
       // Response envelope: { success, data: { task } }
       const updatedTask = (response.data && response.data.task) || response.data || response;
+      updatedTask.projectId = updatedTask.project;
+      // Convert backend status → frontend status
+      const reverseStatusMap = {
+        todo: "todo",
+        in_progress: "inprog",
+        done: "done",
+      };
 
+      updatedTask.status =
+        reverseStatusMap[updatedTask.status] || updatedTask.status;
+
+      updatedTask.deadline = updatedTask.dueDate
+      ? updatedTask.dueDate.slice(0, 10)
+      : (updatedTask.deadline || "");
+      
       // Update cache
       if (tasksCache) {
         const i = tasksCache.findIndex(t => t.id === id);
@@ -298,7 +428,7 @@ const FlowsyncStore = (function () {
 
   return {
     uid,
-    getProjects, getProject, saveProject, deleteProject,
+    getProjects, getProject, saveProject, deleteProject, fetchProjects,
     getTasks, getTask, saveTask, deleteTask, updateTaskStatus, fetchTasks,
     getTeam, addMember, removeMember,
     getActivity, addActivity,

@@ -39,8 +39,16 @@
 
   function fmtDate(iso) {
     if (!iso) return '—';
-    const d = new Date(iso + 'T00:00:00');
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    const d = new Date(iso);
+
+    if (isNaN(d.getTime())) return '—';
+
+    return d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   }
 
   function relTime(ts) {
@@ -440,7 +448,18 @@
   ══════════════════════════════════════════ */
   let editingProjectId = null;
 
-  function renderProjects() {
+  async function renderProjects() {
+    el('projectsGrid').innerHTML = '<div style="padding:32px;color:var(--text-sub);font-size:13px;text-align:center;grid-column:1/-1">Loading projects…</div>';
+    try {
+      await FlowsyncStore.fetchProjects();
+    } catch (err) {
+      el('projectsGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">⚠️</div><h3>Could not load projects</h3><p>Check your connection and try again.</p></div>`;
+      return;
+    }
+    _renderProjectsFromCache();
+  }
+
+  function _renderProjectsFromCache() {
     const projects = FlowsyncStore.getProjects();
     if (!projects.length) {
       el('projectsGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">📁</div><h3>No projects yet</h3><p>Click "New Project" to create your first project.</p></div>`;
@@ -488,29 +507,49 @@
   }
 
   el('newProjectBtn').addEventListener('click', () => openProjectModal());
-  el('saveProjectBtn').addEventListener('click', () => {
+  el('saveProjectBtn').addEventListener('click', async () => {
     const name = el('pName').value.trim();
     if (!name) { el('pName').focus(); toast('Project name is required.', 'error'); return; }
     const data = { id: editingProjectId||undefined, name,
       description: el('pDesc').value.trim(),
       deadline: el('pDeadline').value || '',
       status:   el('pStatus').value };
-    FlowsyncStore.saveProject(data);
-    FlowsyncStore.addActivity(`Project "${name}" ${editingProjectId ? 'updated' : 'created'}.`);
-    closeModal('projectModal');
-    toast(editingProjectId ? 'Project updated.' : 'Project created.');
-    renderProjects();
+    const saveBtn = el('saveProjectBtn');
+    saveBtn.disabled = true;
+    try {
+      await FlowsyncStore.saveProject(data);
+      FlowsyncStore.addActivity(`Project "${name}" ${editingProjectId ? 'updated' : 'created'}.`);
+      closeModal('projectModal');
+      toast(editingProjectId ? 'Project updated.' : 'Project created.');
+      _renderProjectsFromCache();
+    } catch (err) {
+      const msg = err.status === 409
+        ? 'A project with this name already exists.'
+        : err.message || 'Failed to save project. Please try again.';
+      toast(msg, 'error');
+    } finally {
+      saveBtn.disabled = false;
+    }
   });
 
   App.editProject   = (id) => openProjectModal(id);
-  App.deleteProject = (id) => {
+  App.deleteProject = async (id) => {
     const p = FlowsyncStore.getProject(id);
     if (!p) return;
     if (!confirm(`Delete "${p.name}" and all its tasks? This cannot be undone.`)) return;
-    FlowsyncStore.deleteProject(id);
-    FlowsyncStore.addActivity(`Project "${p.name}" deleted.`);
-    toast('Project deleted.');
-    renderProjects();
+    try {
+      await FlowsyncStore.deleteProject(id);
+      FlowsyncStore.addActivity(`Project "${p.name}" deleted.`);
+      toast('Project deleted.');
+      _renderProjectsFromCache();
+    } catch (err) {
+      const msg = err.status === 403
+        ? 'Only the project owner can delete this project.'
+        : err.status === 404
+          ? 'Project not found — it may have already been deleted.'
+          : 'Failed to delete project. Please try again.';
+      toast(msg, 'error');
+    }
   };
 
 

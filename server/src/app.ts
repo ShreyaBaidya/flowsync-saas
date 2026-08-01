@@ -12,7 +12,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 
 import { env } from './config/env';
-import { requestLogger } from './middleware/requestLogger';
+import { attachRequestId, requestLogger } from './middleware/requestLogger';
 import { generalLimiter } from './middleware/rateLimiter';
 import { notFound } from './middleware/notFound';
 import { errorHandler } from './middleware/errorHandler';
@@ -88,22 +88,25 @@ export function createApp(): Application {
   // ── 5. Response compression ───────────────────────────────
   app.use(compression());
 
-  // ── 6. HTTP request logging ───────────────────────────────
+  // ── 6. Attach Request ID ──────────────────────────────────
+  app.use(attachRequestId);
+
+  // ── 7. HTTP request logging ───────────────────────────────
   app.use(requestLogger);
 
-  // ── 7. Global rate limiter ────────────────────────────────
+  // ── 8. Global rate limiter ────────────────────────────────
   app.use(generalLimiter);
 
-  // ── 8. Trust proxy (needed when behind Nginx / Railway / Render) ──
+  // ── 9. Trust proxy (needed when behind Nginx / Railway / Render) ──
   app.set('trust proxy', 1);
 
-  // ── 9. API routes ─────────────────────────────────────────
+  // ── 10. API routes ─────────────────────────────────────────
   app.use(env.API_PREFIX, apiRoutes);
 
-  // ── 10. 404 handler (must come after all routes) ──────────
+  // ── 11. 404 handler (must come after all routes) ──────────
   app.use(notFound);
 
-  // ── 11. Global error handler (must be last) ───────────────
+  // ── 12. Global error handler (must be last) ───────────────
   app.use(errorHandler);
 
   return app;
