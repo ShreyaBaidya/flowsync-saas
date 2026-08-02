@@ -1,44 +1,29 @@
 # 🚀 FlowSync – Full-Stack SaaS Project Management Platform
 
-FlowSync is a **full-stack SaaS project management platform** that enables users to securely manage projects and tasks through a modern, responsive interface.
+FlowSync is a modern **full-stack SaaS project management application** built with **HTML, CSS, JavaScript, TypeScript, Node.js, Express.js, and MongoDB**.
 
-The application features **JWT authentication**, **refresh token rotation**, **MongoDB persistence**, **RESTful APIs**, and a clean frontend built with vanilla JavaScript.
-
----
-
-# 📸 Preview
-
-> Add screenshots after deployment.
-
-- Landing Page
-- Sign In / Sign Up
-- Dashboard
-- Projects
-- Tasks
-- Timeline
-- Team
-- Light & Dark Theme
+It enables users to securely manage projects and tasks through a clean and responsive interface with **JWT Authentication**, **Refresh Token Rotation**, and a RESTful backend.
 
 ---
 
-# ✨ Features
+## ✨ Features
 
-## 🔐 Authentication
+### 🔐 Authentication
 
 - User Registration
 - User Login
 - JWT Access Token Authentication
 - Refresh Token Rotation
 - HTTP-only Refresh Token Cookies
-- Protected Routes
+- Protected API Routes
 - Logout
 - Logout from All Devices
 - Get Current User
-- Session Persistence
+- Persistent User Sessions
 
 ---
 
-## 📊 Dashboard
+### 📊 Dashboard
 
 - Total Projects
 - Total Tasks
@@ -47,71 +32,73 @@ The application features **JWT authentication**, **refresh token rotation**, **M
 - Overdue Tasks
 - Completion Percentage
 - Recent Activity
-- Personalized Greeting
+- Personalized Welcome Message
 
 ---
 
-## 📁 Project Management
+### 📁 Project Management
 
 - Create Projects
 - View Projects
+- Update Projects
+- Delete Projects
 - Project Status Tracking
-- Project Statistics
 - MongoDB Persistence
 
 ---
 
-## ✅ Task Management
+### ✅ Task Management
 
 - Create Tasks
 - View Tasks
+- Update Tasks
+- Delete Tasks
+- Project-wise Task Organization
 - Task Priorities
 - Task Status Management
 - Due Dates
-- Project-wise Task Organization
-- Timeline Integration
 
 ---
 
-## 📅 Timeline
+### 📅 Timeline
 
-- Chronological task view
-- Due date visualization
-- Status indicators
-- Project-linked tasks
-
----
-
-## 👥 Team
-
-- Invite team members (frontend)
-- Local team management
-- Ready for backend Team API integration
+- Timeline View of Tasks
+- Due Date Visualization
+- Chronological Task Ordering
+- Status Indicators
 
 ---
 
-## 🎨 User Experience
+### 👥 Team
+
+- Invite Team Members (Frontend)
+- Local Team Management
+- Ready for Backend Team API Integration
+
+---
+
+### 🎨 User Experience
 
 - Responsive Design
 - Light / Dark Theme
 - Loading States
 - Empty States
-- Clean UI
-- User-friendly Error Messages
+- Clean User Interface
+- User-Friendly Error Handling
 
 ---
 
-## 🔒 Security
+### 🔒 Security
 
 - JWT Authentication
 - Refresh Token Rotation
 - Password Hashing (bcrypt)
-- HTTP-only Cookies
+- HTTP-only Refresh Token Cookies
 - Helmet Security Headers
 - CORS Protection
 - Rate Limiting
 - Centralized Error Handling
-- Environment Validation
+- Environment Variable Validation
 
 ---
 
@@ -123,7 +110,6 @@ The application features **JWT authentication**, **refresh token rotation**, **M
 - CSS3
 - JavaScript (ES6)
 - Fetch API
-- Local Storage (UI preferences & frontend cache)
 
 ## Backend
 
@@ -138,16 +124,21 @@ The application features **JWT authentication**, **refresh token rotation**, **M
 
 ## Authentication
 
-- JWT (JSON Web Tokens)
+- JWT
 - Refresh Tokens
 - HTTP-only Cookies
+
+## Storage
+
+- MongoDB (Primary Data Store)
+- localStorage (Frontend Cache & UI Preferences)
 
 ---
 
 # 📂 Project Structure
 
 ```text
-FlowSync
+flowsync-saas
 │
 ├── server
 │   ├── src
@@ -158,30 +149,34 @@ FlowSync
 │   │   ├── routes
 │   │   ├── services
 │   │   ├── types
-│   │   └── utils
+│   │   ├── utils
+│   │   ├── app.ts
+│   │   └── index.ts
 │   │
 │   ├── package.json
-│   └── tsconfig.json
+│   ├── tsconfig.json
+│   └── .env.example
 │
 ├── api-client.js
 ├── app-store.js
-├── auth.js
 ├── auth-state.js
+├── auth.js
 ├── dashboard.html
 ├── dashboard.js
+├── index.html
+├── signin.html
+├── signup.html
 ├── profile.html
-├── profile.js
 ├── settings.html
-├── settings.js
-├── theme.js
+├── styles.css
 └── README.md
 ```
 
 ---
 
-# 🛠️ Installation
+# ⚙️ Installation
 
-## Clone the repository
+## 1. Clone the Repository
 
 ```bash
 git clone https://github.com/ShreyaBaidya/flowsync-saas.git
@@ -191,47 +186,76 @@ cd flowsync-saas
 
 ---
 
-## Backend Setup
+## 2. Backend Setup
+
+Navigate to the server directory:
 
 ```bash
 cd server
+```
 
+Install dependencies:
+
+```bash
 npm install
 ```
 
-Create a `.env` file inside the `server` directory.
+---
+
+## 3. Create Environment Variables
+
+Copy the example file.
+
+### Windows
+
+```powershell
+copy .env.example .env
+```
+
+### Linux / macOS
+
+```bash
+cp .env.example .env
+```
+
+Update the `.env` file with your own values.
 
 Example:
 
 ```env
+# Server
 PORT=5000
 
+# Database
 MONGODB_URI=mongodb://127.0.0.1:27017/flowsync
 
-JWT_ACCESS_SECRET=your_access_secret
-
-JWT_REFRESH_SECRET=your_refresh_secret
+# JWT
+ACCESS_TOKEN_SECRET=your_super_secure_access_token_secret_here
+REFRESH_TOKEN_SECRET=your_super_secure_refresh_token_secret_here
 
 ACCESS_TOKEN_EXPIRES_IN=15m
-
 REFRESH_TOKEN_EXPIRES_IN=7d
 
+# Frontend
 CLIENT_URL=http://127.0.0.1:5500
+
+# Cookies
+COOKIE_SECURE=false
+COOKIE_SAME_SITE=lax
+
+# Environment
+NODE_ENV=development
 ```
 
-Start the backend:
+---
+
+## 4. Start the Backend
 
 ```bash
 npm run dev
 ```
 
----
-
-## Frontend
-
-Open the frontend using **VS Code Live Server** (or any static web server).
-
-Default backend URL:
+The backend will start on:
 
 ```
 http://localhost:5000
@@ -239,7 +263,19 @@ http://localhost:5000
 
 ---
 
-# 📡 API Overview
+## 5. Run the Frontend
+
+Open the project using **VS Code Live Server** (or any static web server).
+
+The frontend communicates with:
+
+```
+http://localhost:5000
+```
+
+---
+
+# 📡 REST API
 
 ## Authentication
 
@@ -268,8 +304,8 @@ http://localhost:5000
 |---------|----------|
 | GET | `/api/v1/projects` |
 | POST | `/api/v1/projects` |
-| PUT | `/api/v1/projects/:id` |
-| DELETE | `/api/v1/projects/:id` |
+| PUT | `/api/v1/projects/:projectId` |
+| DELETE | `/api/v1/projects/:projectId` |
 
 ---
 
@@ -284,31 +320,31 @@ http://localhost:5000
 
 ---
 
-# 🔐 Security Features
+# 🔒 Security Features
 
 - JWT Authentication
 - Refresh Token Rotation
 - Password Hashing using bcrypt
-- HTTP-only Refresh Token Cookies
-- Helmet Security Headers
-- CORS Protection
+- HTTP-only Cookies
+- Helmet
+- CORS
 - Rate Limiting
+- Secure Environment Variables
 - Centralized Error Handling
-- Environment Variable Validation
 
 ---
 
-# 🚀 Future Improvements
+# 🚀 Future Enhancements
 
-- Team Management Backend API
+- Backend Team Management API
 - Workspace Invitations
 - Role-Based Access Control (RBAC)
-- Drag-and-Drop Kanban Board
+- Drag & Drop Kanban Board
 - Email Verification
-- Password Reset
+- Forgot Password & Password Reset
+- Notifications
 - Calendar Integration
 - File Attachments
-- Notifications
 - Docker Support
 - CI/CD Pipeline
 - Automated Testing
@@ -319,7 +355,13 @@ http://localhost:5000
 
 **Shreya Baidya**
 
-B.Tech – Electronics and Communication Engineering  
-IIT (ISM) Dhanbad
+B.Tech, Electronics and Communication Engineering  
+Indian Institute of Technology (ISM) Dhanbad
 
 GitHub: https://github.com/ShreyaBaidya
+
+---
+
+## ⭐ Support
+
+If you found this project useful, consider giving it a ⭐ on GitHub!
