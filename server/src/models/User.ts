@@ -1,40 +1,31 @@
-/**
- * User.ts
- * Mongoose model for FlowSync users.
- *
- * Security notes:
- *  - passwordHash is excluded from all query results by default (select: false)
- *  - comparePassword is an instance method — never expose the hash to callers
- *  - toSafeObject strips all sensitive fields before sending to clients
- */
-
-import { Schema, model, Document, Model } from 'mongoose';
+import { Schema, model, Document, Model, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { env } from '../config/env';
-import { UserPlan, SafeUser } from '../types/auth.types';
+import type { SafeUser, UserRole, UserPlan } from '../types/user.types';
 
-// ── Document interface ───────────────────────────────────────
+// ── Document interface ────────────────────────────────────────
 
 export interface IUser extends Document {
+  _id:             Types.ObjectId;
   name:            string;
   email:           string;
-  passwordHash:    string;
+  password:        string;
+  avatar:          string | null;
+  role:            UserRole;
   plan:            UserPlan;
-  trialStartedAt?: Date;
+  isEmailVerified: boolean;
   createdAt:       Date;
   updatedAt:       Date;
 
-  // Instance methods
   comparePassword(candidate: string): Promise<boolean>;
   toSafeObject(): SafeUser;
-  getInitials(): string;
 }
 
-// ── Model interface (for static methods if needed later) ─────
+// ── Model interface ───────────────────────────────────────────
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface IUserModel extends Model<IUser> {}
 
-// ── Schema ───────────────────────────────────────────────────
+// ── Schema ────────────────────────────────────────────────────
 
 const userSchema = new Schema<IUser, IUserModel>(
   {
@@ -45,6 +36,7 @@ const userSchema = new Schema<IUser, IUserModel>(
       minlength: [2,  'Name must be at least 2 characters'],
       maxlength: [80, 'Name must be at most 80 characters'],
     },
+
     email: {
       type:      String,
       required:  [true, 'Email is required'],
@@ -56,94 +48,83 @@ const userSchema = new Schema<IUser, IUserModel>(
         'Please provide a valid email address',
       ],
     },
-    passwordHash: {
+
+    password: {
       type:     String,
       required: [true, 'Password is required'],
-      select:   false,   // ← Never returned in queries unless explicitly requested
+      select:   false, // never returned in queries unless explicitly requested
     },
+
+    avatar: {
+      type:    String,
+      default: null,
+      trim:    true,
+    },
+
+    role: {
+      type:    String,
+      enum:    ['user', 'admin'] satisfies UserRole[],
+      default: 'user',
+    },
+
     plan: {
       type:    String,
-      enum:    ['starter', 'pro_trial', 'pro', 'enterprise'],
+      enum:    ['starter', 'pro'] satisfies UserPlan[],
       default: 'starter',
     },
-    trialStartedAt: {
-      type: Date,
+
+    isEmailVerified: {
+      type:    Boolean,
+      default: false,
     },
   },
   {
-    timestamps: true,      // Adds createdAt + updatedAt
+    timestamps: true,
     versionKey: false,
   },
 );
 
 // ── Indexes ───────────────────────────────────────────────────
-// email already indexed via unique:true
-// Add compound or additional indexes here as the schema grows
 
-// ── Hooks ────────────────────────────────────────────────────
+// email is already indexed via unique: true
+// Composite index for common admin queries (filter by role + plan)
+userSchema.index({ role: 1, plan: 1 });
 
-/**
- * Hash the plain-text password before save.
- * Only runs when the passwordHash field is new or modified.
- * NOTE: this hook receives the plain-text password in passwordHash.
- * Callers set `user.passwordHash = plainTextPassword` before save,
- * and the hook replaces it with the bcrypt hash.
- */
+// ── Pre-save hook — hash password ─────────────────────────────
+
 userSchema.pre<IUser>('save', async function (next) {
-  if (!this.isModified('passwordHash')) return next();
+  // Only hash when the password field has been set or changed
+  if (!this.isModified('password')) return next();
 
-  try {
-    const salt      = await bcrypt.genSalt(env.BCRYPT_ROUNDS);
-    this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
-    next();
-  } catch (err) {
-    next(err as Error);
-  }
+  const salt    = await bcrypt.genSalt(12);
+  this.password = await bcrypt.hash(this.password, salt);
+
+  next();
 });
 
 // ── Instance methods ──────────────────────────────────────────
 
-/**
- * Compare a plain-text password against the stored bcrypt hash.
- * Always requires passwordHash to be selected (use .select('+passwordHash')).
- */
 userSchema.methods.comparePassword = async function (
   this: IUser,
   candidate: string,
 ): Promise<boolean> {
-  return bcrypt.compare(candidate, this.passwordHash);
+  return bcrypt.compare(candidate, this.password);
 };
 
-/**
- * Derive initials from the user's name (up to 2 characters).
- * Mirrors the frontend FlowsyncAuth.getInitials() logic.
- */
-userSchema.methods.getInitials = function (this: IUser): string {
-  const parts = this.name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-};
-
-/**
- * Return a plain object safe to send to clients.
- * Excludes passwordHash and internal Mongoose fields.
- */
 userSchema.methods.toSafeObject = function (this: IUser): SafeUser {
   return {
-    id:              (this._id as { toString(): string }).toString(),
+    id:              this._id.toString(),
     name:            this.name,
     email:           this.email,
-    initials:        this.getInitials(),
+    avatar:          this.avatar,
+    role:            this.role,
     plan:            this.plan,
-    ...(this.trialStartedAt && {
-      trialStartedAt: this.trialStartedAt.toISOString(),
-    }),
-    signedInAt: new Date().toISOString(),   // Set fresh on login
-    createdAt:  this.createdAt.toISOString(),
+    isEmailVerified: this.isEmailVerified,
+    createdAt:       this.createdAt.toISOString(),
+    updatedAt:       this.updatedAt.toISOString(),
   };
 };
 
-// ── Model export ─────────────────────────────────────────────
+// ── Model export ──────────────────────────────────────────────
 
 export const User = model<IUser, IUserModel>('User', userSchema);

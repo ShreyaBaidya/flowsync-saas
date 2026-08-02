@@ -1,74 +1,77 @@
-/**
- * env.ts
- * Centralised, validated environment configuration.
- * Fails fast at startup if a required variable is missing.
- */
+import 'dotenv/config';
+import { z } from 'zod';
 
-import dotenv from 'dotenv';
-import path from 'path';
+// ── Schema ────────────────────────────────────────────────────
+const envSchema = z.object({
+  PORT: z
+    .string()
+    .default('5000')
+    .transform(Number)
+    .refine((n) => Number.isInteger(n) && n > 0 && n < 65536, {
+      message: 'PORT must be a valid port number (1–65535)',
+    }),
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+  NODE_ENV: z
+    .enum(['development', 'production', 'test'])
+    .default('development'),
+  
+  MONGODB_URI: z
+    .string({ required_error: 'MONGODB_URI is required' })
+    .min(1, 'MONGODB_URI cannot be empty')
+    .startsWith('mongodb', 'MONGODB_URI must start with "mongodb"'),
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`[Config] Missing required environment variable: ${name}`);
-  }
-  return value;
+  ACCESS_TOKEN_SECRET: z
+    .string({ required_error: 'ACCESS_TOKEN_SECRET is required' })
+    .min(32, 'ACCESS_TOKEN_SECRET must be at least 32 characters'),
+
+  REFRESH_TOKEN_SECRET: z
+    .string({ required_error: 'REFRESH_TOKEN_SECRET is required' })
+    .min(32, 'REFRESH_TOKEN_SECRET must be at least 32 characters'),
+
+  ACCESS_TOKEN_EXPIRES_IN: z
+    .string()
+    .default('15m')
+    .refine((v) => /^\d+[smhd]$/.test(v), {
+      message: 'ACCESS_TOKEN_EXPIRES_IN must be a duration string (e.g. 15m, 1h)',
+    }),
+
+  REFRESH_TOKEN_EXPIRES_IN: z
+    .string()
+    .default('7d')
+    .refine((v) => /^\d+[smhd]$/.test(v), {
+      message: 'REFRESH_TOKEN_EXPIRES_IN must be a duration string (e.g. 7d, 30d)',
+    }),
+
+  CLIENT_URL: z
+    .string({ required_error: 'CLIENT_URL is required' })
+    .url('CLIENT_URL must be a valid URL'),
+
+  COOKIE_SECURE: z
+    .string()
+    .default('false')
+    .transform((v) => v === 'true'),
+
+  COOKIE_SAME_SITE: z
+    .enum(['strict', 'lax', 'none'], {
+      errorMap: () => ({
+        message: 'COOKIE_SAME_SITE must be one of: strict | lax | none',
+      }),
+    })
+    .default('lax'),
+});
+
+// ── Validation ────────────────────────────────────────────────
+const result = envSchema.safeParse(process.env);
+
+if (!result.success) {
+  console.error('\n❌ Invalid environment variables:\n');
+  result.error.issues.forEach((issue) => {
+    console.error(`  ${issue.path.join('.')} — ${issue.message}`);
+  });
+  console.error('\nFix the above variables in your .env file and restart.\n');
+  process.exit(1);
 }
 
-function optionalEnv(name: string, fallback: string): string {
-  return process.env[name] ?? fallback;
-}
-
-function requireInt(name: string, fallback?: number): number {
-  const raw = process.env[name];
-  if (raw === undefined || raw === '') {
-    if (fallback !== undefined) return fallback;
-    throw new Error(`[Config] Missing required environment variable: ${name}`);
-  }
-  const parsed = parseInt(raw, 10);
-  if (isNaN(parsed)) {
-    throw new Error(`[Config] Environment variable ${name} must be an integer, got: "${raw}"`);
-  }
-  return parsed;
-}
-
-export const env = {
-  // ── Server ────────────────────────────────────────────────
-  NODE_ENV:   optionalEnv('NODE_ENV', 'development'),
-  PORT:       requireInt('PORT', 5000),
-  API_PREFIX: optionalEnv('API_PREFIX', '/api/v1'),
-
-  // ── Database ──────────────────────────────────────────────
-  MONGODB_URI: requireEnv('MONGODB_URI'),
-
-  // ── CORS ──────────────────────────────────────────────────
-  CORS_ORIGINS: optionalEnv('CORS_ORIGINS', 'http://localhost:3000')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean),
-
-  // ── JWT ───────────────────────────────────────────────────
-  JWT_ACCESS_SECRET:  requireEnv('JWT_ACCESS_SECRET'),
-  JWT_REFRESH_SECRET: requireEnv('JWT_REFRESH_SECRET'),
-
-  // Short-lived access token (15 minutes)
-  JWT_ACCESS_EXPIRES_IN:  optionalEnv('JWT_ACCESS_EXPIRES_IN',  '15m'),
-  // Long-lived refresh token (7 days)
-  JWT_REFRESH_EXPIRES_IN: optionalEnv('JWT_REFRESH_EXPIRES_IN', '7d'),
-
-  // ── Cookies ───────────────────────────────────────────────
-  // Refresh token cookie max-age in milliseconds (7 days)
-  COOKIE_MAX_AGE: requireInt('COOKIE_MAX_AGE', 7 * 24 * 60 * 60 * 1000),
-
-  // ── Bcrypt ───────────────────────────────────────────────
-  BCRYPT_ROUNDS: requireInt('BCRYPT_ROUNDS', 12),
-
-  // ── Logging ───────────────────────────────────────────────
-  LOG_LEVEL: optionalEnv('LOG_LEVEL', 'info'),
-
-  // ── Flags ─────────────────────────────────────────────────
-  get isDev()  { return this.NODE_ENV === 'development'; },
-  get isProd() { return this.NODE_ENV === 'production';  },
-} as const;
+// ── Typed export ──────────────────────────────────────────────
+export const env = result.data;
+export type Env = typeof env;

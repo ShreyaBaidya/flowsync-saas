@@ -1,38 +1,19 @@
-/**
- * ApiError.ts
- * Custom error class for operational API errors.
- * All intentional errors (4xx, 5xx) should be thrown as ApiError instances
- * so the global error handler can format them consistently.
- */
-
 export class ApiError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;
-  public readonly errors?: unknown[];
 
-  constructor(
-    statusCode: number,
-    message: string,
-    errors?: unknown[],
-    isOperational = true,
-  ) {
+  constructor(statusCode: number, message: string, isOperational = true) {
     super(message);
-    this.name        = 'ApiError';
-    this.statusCode  = statusCode;
+    this.name          = 'ApiError';
+    this.statusCode    = statusCode;
     this.isOperational = isOperational;
-    this.errors      = errors;
 
-    // Maintains proper prototype chain in transpiled ES5
     Object.setPrototypeOf(this, ApiError.prototype);
-
-    // Captures V8 stack trace, excluding this constructor frame
     Error.captureStackTrace(this, this.constructor);
   }
 
-  // ── Convenience factories ───────────────────────────────────
-
-  static badRequest(message = 'Bad request', errors?: unknown[]): ApiError {
-    return new ApiError(400, message, errors);
+  static badRequest(message = 'Bad request'): ApiError {
+    return new ApiError(400, message);
   }
 
   static unauthorized(message = 'Unauthorized'): ApiError {
@@ -43,7 +24,7 @@ export class ApiError extends Error {
     return new ApiError(403, message);
   }
 
-  static notFound(message = 'Resource not found'): ApiError {
+  static notFound(message = 'Not found'): ApiError {
     return new ApiError(404, message);
   }
 
@@ -56,6 +37,6 @@ export class ApiError extends Error {
   }
 
   static internal(message = 'Internal server error'): ApiError {
-    return new ApiError(500, message, undefined, false);
+    return new ApiError(500, message, false);
   }
 }

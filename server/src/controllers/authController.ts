@@ -1,141 +1,162 @@
-/**
- * authController.ts
- * Thin HTTP layer — validates inputs, calls authService, sends responses.
- * All business logic lives in authService.ts.
- *
- * Routes handled:
- *   POST   /auth/signup    — create account
- *   POST   /auth/signin    — authenticate and get tokens
- *   POST   /auth/signout   — revoke refresh token (current device)
- *   POST   /auth/refresh   — exchange refresh token for new access token
- *   GET    /auth/me        — return current user from access token
- */
-
 import { Request, Response, NextFunction } from 'express';
 import * as authService from '../services/authService';
 import { ApiResponse } from '../utils/ApiResponse';
 import { ApiError } from '../utils/ApiError';
-import { refreshCookieOptions } from '../utils/token';
-import { SignUpBody, SignInBody } from '../types/auth.types';
+import { refreshCookieOptions, clearCookieOptions } from '../utils/token';
 
-const REFRESH_COOKIE = 'fs_refresh';   // Cookie name
+// ── Cookie name ───────────────────────────────────────────────
+// Defined once here so it stays in sync between set and clear.
+const REFRESH_COOKIE = 'refreshToken';
 
-// ── POST /auth/signup ─────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────
 
-export async function signUp(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const { name, email, password, plan }: SignUpBody = req.body;
-
-    // Basic presence checks — detailed validation is in the service / model
-    if (!name?.trim())  throw ApiError.badRequest('Name is required.');
-    if (!email?.trim()) throw ApiError.badRequest('Email is required.');
-    if (!password)      throw ApiError.badRequest('Password is required.');
-    if (password.length < 8) {
-      throw ApiError.badRequest('Password must be at least 8 characters.');
-    }
-
-    const result = await authService.register({ name, email, password, plan });
-
-    // Set httpOnly refresh token cookie
-    res.cookie(REFRESH_COOKIE, result.refreshToken, refreshCookieOptions());
-
-    ApiResponse.created(
-      res,
-      { user: result.user, accessToken: result.accessToken },
-      'Account created successfully.',
-    );
-  } catch (err) {
-    next(err);
-  }
+function getRequestContext(req: Request): authService.RequestContext {
+  return {
+    userAgent: req.headers['user-agent'] ?? 'unknown',
+    ipAddress: req.ip ?? 'unknown',
+  };
 }
 
-// ── POST /auth/signin ─────────────────────────────────────────
-
-export async function signIn(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const { email, password }: SignInBody = req.body;
-
-    if (!email?.trim()) throw ApiError.badRequest('Email is required.');
-    if (!password)      throw ApiError.badRequest('Password is required.');
-
-    const result = await authService.login({ email, password });
-
-    res.cookie(REFRESH_COOKIE, result.refreshToken, refreshCookieOptions());
-
-    ApiResponse.success(
-      res,
-      { user: result.user, accessToken: result.accessToken },
-      'Signed in successfully.',
-    );
-  } catch (err) {
-    next(err);
-  }
+function setRefreshCookie(res: Response, token: string): void {
+  res.cookie(REFRESH_COOKIE, token, refreshCookieOptions());
 }
 
-// ── POST /auth/signout ────────────────────────────────────────
+function clearRefreshCookie(res: Response): void {
+  res.clearCookie(REFRESH_COOKIE, clearCookieOptions());
+}
 
-export async function signOut(
+// ── signup ────────────────────────────────────────────────────
+
+export async function signup(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const token = req.cookies?.[REFRESH_COOKIE] as string | undefined;
+    const { name, email, password } = req.body as {
+      name: string;
+      email: string;
+      password: string;
+    };
 
-    if (token) {
-      await authService.logout(token);
-    }
+    const ctx    = getRequestContext(req);
+    const result = await authService.register({ name, email, password }, ctx);
 
-    // Clear the cookie regardless
-    res.clearCookie(REFRESH_COOKIE, {
-      ...refreshCookieOptions(0),
-      maxAge: 0,
+    setRefreshCookie(res, result.refreshToken);
+
+    ApiResponse.created(res, 'Account created successfully', {
+      user:        result.user,
+      accessToken: result.accessToken,
+      // refreshToken is intentionally omitted — it lives in the httpOnly cookie
     });
-
-    ApiResponse.success(res, null, 'Signed out successfully.');
   } catch (err) {
     next(err);
   }
 }
 
-// ── POST /auth/refresh ────────────────────────────────────────
+// ── signin ────────────────────────────────────────────────────
 
-export async function refreshTokens(
+export async function signin(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const token = req.cookies?.[REFRESH_COOKIE] as string | undefined;
+    const { email, password } = req.body as {
+      email: string;
+      password: string;
+    };
 
-    if (!token) {
-      throw ApiError.unauthorized('No refresh token provided.');
-    }
+    const ctx    = getRequestContext(req);
+    const result = await authService.login({ email, password }, ctx);
 
-    const result = await authService.refresh(token);
+    setRefreshCookie(res, result.refreshToken);
 
-    // Rotate: set the new refresh token cookie
-    res.cookie(REFRESH_COOKIE, result.refreshToken, refreshCookieOptions());
-
-    ApiResponse.success(
-      res,
-      { user: result.user, accessToken: result.accessToken },
-      'Tokens refreshed.',
-    );
+    ApiResponse.success(res, 'Signed in successfully', {
+      user:        result.user,
+      accessToken: result.accessToken,
+    });
   } catch (err) {
     next(err);
   }
 }
 
-// ── GET /auth/me ──────────────────────────────────────────────
+// ── refresh ───────────────────────────────────────────────────
+
+export async function refresh(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const rawToken = req.cookies[REFRESH_COOKIE] as string | undefined;
+
+    if (!rawToken) {
+      throw ApiError.unauthorized('Refresh token cookie is missing');
+    }
+
+    const ctx    = getRequestContext(req);
+    const result = await authService.refresh(rawToken, ctx);
+
+    // Rotate: replace the old cookie with the new refresh token
+    setRefreshCookie(res, result.refreshToken);
+
+    ApiResponse.success(res, 'Token refreshed successfully', {
+      user:        result.user,
+      accessToken: result.accessToken,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── logout ────────────────────────────────────────────────────
+
+export async function logout(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const rawToken = req.cookies[REFRESH_COOKIE] as string | undefined;
+
+    if (rawToken) {
+      // Revoke the current session token from the database
+      await authService.logout(rawToken);
+    }
+
+    clearRefreshCookie(res);
+
+    ApiResponse.success(res, 'Logged out successfully', null);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── logoutAll ─────────────────────────────────────────────────
+
+export async function logoutAll(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    // req.user is set by the authenticate middleware
+    if (!req.user) {
+      throw ApiError.unauthorized('Not authenticated');
+    }
+
+    await authService.logoutAll(req.user.id);
+
+    clearRefreshCookie(res);
+
+    ApiResponse.success(res, 'Logged out from all devices', null);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ── getMe ─────────────────────────────────────────────────────
 
 export async function getMe(
   req: Request,
@@ -143,13 +164,13 @@ export async function getMe(
   next: NextFunction,
 ): Promise<void> {
   try {
-    // req.user is populated by the authenticate middleware
     if (!req.user) {
-      throw ApiError.unauthorized('Not authenticated.');
+      throw ApiError.unauthorized('Not authenticated');
     }
 
-    const user = await authService.getMe(req.user.sub);
-    ApiResponse.success(res, { user });
+    const user = await authService.getMe(req.user.id);
+
+    ApiResponse.success(res, 'User retrieved successfully', { user });
   } catch (err) {
     next(err);
   }

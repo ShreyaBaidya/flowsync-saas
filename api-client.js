@@ -44,6 +44,13 @@ const ApiClient = (function () {
       config.body = JSON.stringify(config.body);
     }
 
+    // ── TEMPORARY DEBUG LOGGING — remove before production ──
+    console.log('[ApiClient] USER',    FlowsyncAuth.getUser());
+    console.log('[ApiClient] TOKEN',   FlowsyncAuth.getToken());
+    console.log('[ApiClient] HEADERS', headers);
+    console.log('[ApiClient] URL',     url);
+    // ── END DEBUG ────────────────────────────────────────────
+
     try {
       const response = await fetch(url, config);
 

@@ -1,24 +1,52 @@
 {
   "compilerOptions": {
+    /* ── Language & Target ───────────────────────────────── */
     "target": "ES2022",
+    "lib": ["ES2022"],
     "module": "CommonJS",
     "moduleResolution": "node",
-    "lib": ["ES2022"],
-    "outDir": "./dist",
-    "rootDir": "./src",
+
+    /* ── Paths ───────────────────────────────────────────── */
+    "rootDir": "src",
+    "outDir": "dist",
+    "baseUrl": ".",
+
+    /* ── Strict Mode ─────────────────────────────────────── */
     "strict": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+
+    /* ── Additional Checks ───────────────────────────────── */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    /* ── Interop ─────────────────────────────────────────── */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* ── Output ──────────────────────────────────────────── */
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+
+    /* ── Decorators (required for Mongoose 8+) ───────────── */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    /* ── Skip checking third-party types ─────────────────── */
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
