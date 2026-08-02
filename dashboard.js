@@ -711,8 +711,8 @@
   ══════════════════════════════════════════ */
   function renderTimeline() {
     const tasks = FlowsyncStore.getTasks()
-      .filter(t => t.dueDate)
-      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+      .filter(t => t.deadline)
+      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
 
     if (!tasks.length) {
       el('timelineList').innerHTML = `<div class="empty-state"><div class="empty-state-icon">📅</div><h3>No deadlines yet</h3><p>Add due dates to tasks to see them here.</p></div>`;
@@ -722,7 +722,7 @@
     // Group by date
     const groups = {};
     tasks.forEach(t => {
-      const d = t.dueDate;
+      const d = t.deadline;
       if (!groups[d]) groups[d] = [];
       groups[d].push(t);
     });

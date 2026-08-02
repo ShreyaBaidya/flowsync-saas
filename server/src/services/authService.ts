@@ -78,16 +78,9 @@ async function issueTokenPair(
   const accessToken  = generateAccessToken(tokenUser);
   const refreshToken = generateRefreshToken(tokenUser);
 
-  const hashed = RefreshToken.hashToken(refreshToken);
-
-  console.log("========== TOKEN DEBUG ==========");
-  console.log("Refresh token:", refreshToken);
-  console.log("Hashed token :", hashed);
-  console.log("================================");
-
   await RefreshToken.create({
     user:        user._id,
-    hashedToken: hashed,
+    hashedToken: RefreshToken.hashToken(refreshToken),
     expiresAt:   parseDurationToDate(env.REFRESH_TOKEN_EXPIRES_IN),
     lastUsedAt:  new Date(),
     userAgent:   ctx.userAgent,
@@ -116,16 +109,8 @@ export async function register(
     throw ApiError.conflict('An account with this email already exists');
   }
 
-  console.log("===== REGISTER DEBUG =====");
-  console.log("Incoming email:", email);
-  console.log("Incoming password:", password);
   // pre-save hook on User model hashes the password automatically
   const user = await User.create({ name: name.trim(), email, password });
-
-  const savedUser = await User.findById(user._id).select("+password");
-
-  console.log("Stored hash:", savedUser?.password);
-  console.log("==========================");
 
   const { accessToken, refreshToken } = await issueTokenPair(user, ctx);
 
@@ -143,37 +128,35 @@ export async function login(
   input: LoginInput,
   ctx: RequestContext,
 ): Promise<AuthResult> {
+
+  console.log("LOGIN INPUT:", input);
+
   const { email, password } = input;
+
+  console.log("EMAIL:", email);
+  console.log("PASSWORD:", password);
 
   // select: false on password field requires explicit opt-in
   const user = await User
     .findOne({ email: email.toLowerCase().trim() })
     .select('+password');
 
-  console.log("===== LOGIN DEBUG =====");
-  console.log("User found:", !!user);
-
-  if (user) {
-    console.log("Email:", user.email);
-    console.log("Password exists:", !!user.password);
-    console.log("Stored hash:", user.password);
-
-    const isMatch = await user.comparePassword(password);
-    console.log("Password match:", isMatch);
-    console.log("======================");
-
-    if (!isMatch) {
-      throw ApiError.unauthorized("Invalid email or password");
-    }
-  } else {
-    console.log("======================");
-    throw ApiError.unauthorized("Invalid email or password");
+  if (!user) {
+    throw ApiError.unauthorized('Invalid email or password');
   }
 
-  // Multiple devices are supported — each login creates its own token record
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    throw ApiError.unauthorized('Invalid email or password');
+  }
+
   const { accessToken, refreshToken } = await issueTokenPair(user, ctx);
 
-  return { user: user.toSafeObject(), accessToken, refreshToken };
+  return {
+    user: user.toSafeObject(),
+    accessToken,
+    refreshToken,
+  };
 }
 
 // ── refresh() ────────────────────────────────────────────────

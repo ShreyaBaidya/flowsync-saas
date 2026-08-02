@@ -62,6 +62,11 @@ export async function signin(
   next: NextFunction,
 ): Promise<void> {
   try {
+    console.log("========== CONTROLLER ==========");
+    console.log("req.body:", req.body);
+    console.log("req.headers:", req.headers);
+    console.log("===============================");
+    
     const { email, password } = req.body as {
       email: string;
       password: string;

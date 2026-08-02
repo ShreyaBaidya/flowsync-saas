@@ -44,12 +44,7 @@ const ApiClient = (function () {
       config.body = JSON.stringify(config.body);
     }
 
-    // ── TEMPORARY DEBUG LOGGING — remove before production ──
-    console.log('[ApiClient] USER',    FlowsyncAuth.getUser());
-    console.log('[ApiClient] TOKEN',   FlowsyncAuth.getToken());
-    console.log('[ApiClient] HEADERS', headers);
-    console.log('[ApiClient] URL',     url);
-    // ── END DEBUG ────────────────────────────────────────────
+    // ── JWT token ─────────────────────────────────────────────
 
     try {
       const response = await fetch(url, config);
@@ -63,12 +58,15 @@ const ApiClient = (function () {
         error.status = response.status;
         error.data = errorData;
 
-        // Expired or invalid token — clear the session and redirect to sign-in
+        // Expired or invalid token — clear the entire session and redirect to sign-in.
+        // Using signOut() rather than clearToken() so that isSignedIn() returns false
+        // on the signin page, preventing an infinite redirect loop between
+        // dashboard.html (401 → replace signin) and signin.html (isSignedIn=true → replace dashboard).
         if (response.status === 401) {
           const onAuthPage = /signin\.html|signup\.html/.test(window.location.pathname);
           if (!onAuthPage) {
             if (typeof FlowsyncAuth !== 'undefined') {
-              FlowsyncAuth.clearToken();
+              FlowsyncAuth.signOut();
             }
             window.location.replace('signin.html');
           }

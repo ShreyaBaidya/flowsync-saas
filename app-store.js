@@ -27,28 +27,10 @@ const FlowsyncStore = (function () {
 
   /* ── seed demo data on first use ── */
   function seed() {
-    // Projects now come from the backend — only seed local-only data
-    if (load(KEYS.team)) return; // already seeded
-
-    const now = Date.now();
-    const day = 86400000;
-
-    const team = [
-      { id: uid(), name: 'Sarah Mitchell', email: 'sarah@nexlayer.io',   role: 'Admin',   avatar: 'SM', addedAt: now - 20*day },
-      { id: uid(), name: 'James Kwon',     email: 'james@nexlayer.io',   role: 'Member',  avatar: 'JK', addedAt: now - 15*day },
-      { id: uid(), name: 'Aisha Larson',   email: 'aisha@nexlayer.io',   role: 'Member',  avatar: 'AL', addedAt: now - 10*day }
-    ];
-
-    const activity = [
-      { id: uid(), text: 'James Kwon completed "Audit existing API"',       time: now - 2 * 3600000 },
-      { id: uid(), text: 'Aisha Larson moved "Design landing page" to In Progress', time: now - 5 * 3600000 },
-      { id: uid(), text: 'Sarah Mitchell created project "Mobile App Redesign"', time: now - 1 * day },
-      { id: uid(), text: 'James Kwon added task "User testing sessions"',   time: now - 2 * day },
-      { id: uid(), text: 'API v2 Migration marked as completed',            time: now - 3 * day }
-    ];
-
-    save(KEYS.team, team);
-    save(KEYS.activity, activity);
+    // Projects and tasks now come from the backend.
+    // Remove any stale task or team data written by the old demo seed.
+    localStorage.removeItem(KEYS.tasks);
+    localStorage.removeItem(KEYS.team);
   }
 
   /* ── Projects CRUD ── */
@@ -66,15 +48,19 @@ const FlowsyncStore = (function () {
   // Fetch all projects from the backend and populate the cache
   async function fetchProjects() {
     try {
-      // Request all projects — backend returns up to 100 per page; sufficient for this app
       const response = await ApiClient.get('/projects?limit=100');
       // Response envelope: { success, data: { projects, total, ... } }
-      const projects = (response.data && response.data.projects) || response.data || [];
+      // Guard: ensure projects is always an array regardless of response shape
+      const raw      = response && response.data;
+      const projects = Array.isArray(raw && raw.projects)
+        ? raw.projects
+        : Array.isArray(raw)
+          ? raw
+          : [];
       projectsCache = projects.map(_normaliseProject);
       return projectsCache;
     } catch (err) {
       console.error('Failed to fetch projects:', err);
-      // Re-throw so callers can show an error state
       throw err;
     }
   }
@@ -177,18 +163,20 @@ const FlowsyncStore = (function () {
 
         const response = await ApiClient.get(`/projects/${projectId}/tasks`);
 
-        const fetched = (
-          (response.data && response.data.tasks) || response.data || []
+        const rawTasks = response && response.data;
+        const fetched = (Array.isArray(rawTasks && rawTasks.tasks)
+          ? rawTasks.tasks
+          : Array.isArray(rawTasks)
+            ? rawTasks
+            : []
         ).map(task => ({
           ...task,
           projectId: task.project,
           status: reverseStatusMap[task.status] || task.status,
-          deadline: task.dueDate
-            ? task.dueDate.slice(0, 10)
-            : (task.deadline || "")
+          deadline: task.dueDate ? task.dueDate.slice(0, 10) : (task.deadline || '')
         }));
 
-        const existing = tasksCache || load(KEYS.tasks) || [];
+        const existing = tasksCache || [];
 
         tasksCache = [
           ...existing.filter(t => t.projectId !== projectId),
@@ -196,43 +184,43 @@ const FlowsyncStore = (function () {
         ];
 
       } else {
-
-        const projects = getProjects();
+        // No project filter — fetch tasks for every project the user has access to.
+        // First ensure the project list is populated (may not be if the user navigated
+        // directly to the Tasks view without visiting Projects first).
+        let projects = getProjects();
+        if (!projects.length) {
+          projects = await fetchProjects();
+        }
 
         if (!projects.length) {
-          tasksCache = tasksCache || load(KEYS.tasks) || [];
+          // User genuinely has no projects — return empty array, not stale localStorage data
+          tasksCache = [];
+          save(KEYS.tasks, tasksCache);
           return tasksCache;
         }
 
         const results = await Promise.all(
           projects.map(p =>
             ApiClient.get(`/projects/${p.id}/tasks`)
-              .then(r =>
-                ((r.data && r.data.tasks) || r.data || []).map(task => ({
+              .then(r => {
+                const rawT = r && r.data;
+                return (Array.isArray(rawT && rawT.tasks)
+                  ? rawT.tasks
+                  : Array.isArray(rawT)
+                    ? rawT
+                    : []
+                ).map(task => ({
                   ...task,
                   projectId: task.project,
                   status: reverseStatusMap[task.status] || task.status,
-                  deadline: task.dueDate
-                    ? task.dueDate.slice(0, 10)
-                    : (task.deadline || "")
-                }))
-              )
-              .catch(err => {
-                  console.error("Project:", p.id);
-                  console.error("Error:", err);
-
-                  if (err.data) {
-                      console.error("Server response:", err.data);
-                  }
-
-                  return [];
+                  deadline: task.dueDate ? task.dueDate.slice(0, 10) : (task.deadline || '')
+                }));
               })
+              .catch(() => [])
           )
         );
-        console.log("Results:", results);
 
         tasksCache = results.flat();
-        console.log("Tasks cache:", tasksCache);
       }
 
       save(KEYS.tasks, tasksCache);
@@ -241,7 +229,7 @@ const FlowsyncStore = (function () {
 
     } catch (err) {
       console.error("Failed to fetch tasks:", err);
-      tasksCache = tasksCache || load(KEYS.tasks) || [];
+      tasksCache = tasksCache || [];
       return tasksCache;
     }
   }
