@@ -1,23 +1,23 @@
 # 🚀 FlowSync – Full-Stack SaaS Project Management Platform
 
-FlowSync is a **full-stack SaaS project management platform** designed to help individuals and teams efficiently organize projects, manage tasks, and monitor progress through an intuitive dashboard.
+FlowSync is a **full-stack SaaS project management platform** that enables users to securely manage projects and tasks through a modern, responsive interface.
 
-The application features **secure JWT-based authentication**, **RESTful APIs**, **MongoDB persistence**, and a responsive frontend with a clean, modern interface supporting both **Light** and **Dark** themes.
+The application features **JWT authentication**, **refresh token rotation**, **MongoDB persistence**, **RESTful APIs**, and a clean frontend built with vanilla JavaScript.
 
 ---
 
-## 📸 Preview
+# 📸 Preview
 
-> **Screenshots**
->
-> Add screenshots here after deployment.
->
-> - Landing Page
-> - Dashboard
-> - Project Management
-> - Task Board
-> - Authentication
-> - Light & Dark Mode
+> Add screenshots after deployment.
+
+- Landing Page
+- Sign In / Sign Up
+- Dashboard
+- Projects
+- Tasks
+- Timeline
+- Team
+- Light & Dark Theme
 
 ---
 
@@ -27,10 +27,13 @@ The application features **secure JWT-based authentication**, **RESTful APIs**, 
 
 - User Registration
 - User Login
-- JWT Authentication
-- Refresh Token Support
+- JWT Access Token Authentication
+- Refresh Token Rotation
+- HTTP-only Refresh Token Cookies
 - Protected Routes
-- Secure Logout
+- Logout
+- Logout from All Devices
+- Get Current User
 - Session Persistence
 
 ---
@@ -43,7 +46,7 @@ The application features **secure JWT-based authentication**, **RESTful APIs**, 
 - Pending Tasks
 - Overdue Tasks
 - Completion Percentage
-- Recent Activity Feed
+- Recent Activity
 - Personalized Greeting
 
 ---
@@ -51,26 +54,39 @@ The application features **secure JWT-based authentication**, **RESTful APIs**, 
 ## 📁 Project Management
 
 - Create Projects
-- Edit Projects
-- Delete Projects
+- View Projects
 - Project Status Tracking
 - Project Statistics
+- MongoDB Persistence
 
 ---
 
 ## ✅ Task Management
 
 - Create Tasks
-- Edit Tasks
-- Delete Tasks
+- View Tasks
 - Task Priorities
 - Task Status Management
 - Due Dates
-- Labels
-- Search
-- Filtering
-- Pagination
-- Kanban-style Workflow
+- Project-wise Task Organization
+- Timeline Integration
+
+---
+
+## 📅 Timeline
+
+- Chronological task view
+- Due date visualization
+- Status indicators
+- Project-linked tasks
+
+---
+
+## 👥 Team
+
+- Invite team members (frontend)
+- Local team management
+- Ready for backend Team API integration
 
 ---
 
@@ -78,24 +94,24 @@ The application features **secure JWT-based authentication**, **RESTful APIs**, 
 
 - Responsive Design
 - Light / Dark Theme
-- Modern UI
 - Loading States
 - Empty States
+- Clean UI
 - User-friendly Error Messages
-- Toast Notifications
 
 ---
 
-## 🔒 Production Features
+## 🔒 Security
 
-- Helmet Security
+- JWT Authentication
+- Refresh Token Rotation
+- Password Hashing (bcrypt)
+- HTTP-only Cookies
+- Helmet Security Headers
+- CORS Protection
 - Rate Limiting
-- Request Validation
 - Centralized Error Handling
-- Request Logging
 - Environment Validation
-- Winston Logger
-- MongoDB Indexes
 
 ---
 
@@ -106,8 +122,8 @@ The application features **secure JWT-based authentication**, **RESTful APIs**, 
 - HTML5
 - CSS3
 - JavaScript (ES6)
-- Local Storage
 - Fetch API
+- Local Storage (UI preferences & frontend cache)
 
 ## Backend
 
@@ -125,13 +141,6 @@ The application features **secure JWT-based authentication**, **RESTful APIs**, 
 - JWT (JSON Web Tokens)
 - Refresh Tokens
 - HTTP-only Cookies
-
-## Security
-
-- Helmet
-- Express Rate Limit
-- Password Hashing (bcrypt)
-- CORS
 
 ---
 
@@ -154,12 +163,12 @@ FlowSync
 │   ├── package.json
 │   └── tsconfig.json
 │
-├── dashboard.html
-├── dashboard.js
-├── app-store.js
 ├── api-client.js
+├── app-store.js
 ├── auth.js
 ├── auth-state.js
+├── dashboard.html
+├── dashboard.js
 ├── profile.html
 ├── profile.js
 ├── settings.html
@@ -202,6 +211,12 @@ MONGODB_URI=mongodb://127.0.0.1:27017/flowsync
 JWT_ACCESS_SECRET=your_access_secret
 
 JWT_REFRESH_SECRET=your_refresh_secret
+
+ACCESS_TOKEN_EXPIRES_IN=15m
+
+REFRESH_TOKEN_EXPIRES_IN=7d
+
+CLIENT_URL=http://127.0.0.1:5500
 ```
 
 Start the backend:
@@ -214,9 +229,9 @@ npm run dev
 
 ## Frontend
 
-Open the frontend using **VS Code Live Server** or any static server.
+Open the frontend using **VS Code Live Server** (or any static web server).
 
-Backend runs on:
+Default backend URL:
 
 ```
 http://localhost:5000
@@ -230,11 +245,12 @@ http://localhost:5000
 
 | Method | Endpoint |
 |---------|----------|
-| POST | /api/v1/auth/signup |
-| POST | /api/v1/auth/signin |
-| POST | /api/v1/auth/signout |
-| POST | /api/v1/auth/refresh |
-| GET | /api/v1/auth/me |
+| POST | `/api/v1/auth/signup` |
+| POST | `/api/v1/auth/signin` |
+| POST | `/api/v1/auth/refresh` |
+| POST | `/api/v1/auth/logout` |
+| POST | `/api/v1/auth/logout-all` |
+| GET | `/api/v1/auth/me` |
 
 ---
 
@@ -242,7 +258,7 @@ http://localhost:5000
 
 | Method | Endpoint |
 |---------|----------|
-| GET | /api/v1/dashboard |
+| GET | `/api/v1/dashboard` |
 
 ---
 
@@ -250,11 +266,10 @@ http://localhost:5000
 
 | Method | Endpoint |
 |---------|----------|
-| GET | /api/v1/projects |
-| POST | /api/v1/projects |
-| GET | /api/v1/projects/:id |
-| PUT | /api/v1/projects/:id |
-| DELETE | /api/v1/projects/:id |
+| GET | `/api/v1/projects` |
+| POST | `/api/v1/projects` |
+| PUT | `/api/v1/projects/:id` |
+| DELETE | `/api/v1/projects/:id` |
 
 ---
 
@@ -262,22 +277,22 @@ http://localhost:5000
 
 | Method | Endpoint |
 |---------|----------|
-| GET | /api/v1/projects/:projectId/tasks |
-| POST | /api/v1/projects/:projectId/tasks |
-| GET | /api/v1/projects/:projectId/tasks/:id |
-| PUT | /api/v1/projects/:projectId/tasks/:id |
-| DELETE | /api/v1/projects/:projectId/tasks/:id |
+| GET | `/api/v1/projects/:projectId/tasks` |
+| POST | `/api/v1/projects/:projectId/tasks` |
+| PUT | `/api/v1/projects/:projectId/tasks/:taskId` |
+| DELETE | `/api/v1/projects/:projectId/tasks/:taskId` |
 
 ---
 
 # 🔐 Security Features
 
 - JWT Authentication
-- Refresh Token Management
+- Refresh Token Rotation
 - Password Hashing using bcrypt
+- HTTP-only Refresh Token Cookies
 - Helmet Security Headers
-- Rate Limiting
 - CORS Protection
+- Rate Limiting
 - Centralized Error Handling
 - Environment Variable Validation
 
@@ -285,15 +300,18 @@ http://localhost:5000
 
 # 🚀 Future Improvements
 
-- Team Collaboration
+- Team Management Backend API
+- Workspace Invitations
+- Role-Based Access Control (RBAC)
 - Drag-and-Drop Kanban Board
 - Email Verification
 - Password Reset
-- Task Attachments
-- Notifications
 - Calendar Integration
+- File Attachments
+- Notifications
 - Docker Support
 - CI/CD Pipeline
+- Automated Testing
 
 ---
 
@@ -305,5 +323,3 @@ B.Tech – Electronics and Communication Engineering
 IIT (ISM) Dhanbad
 
 GitHub: https://github.com/ShreyaBaidya
-
----
