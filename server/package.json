@@ -1,7 +1,7 @@
 {
   "name": "flowsync-api",
   "version": "1.0.0",
-  "description": "FlowSync REST API — Express + TypeScript + MongoDB",
+  "description": "TaskLune REST API — Express + TypeScript + MongoDB",
   "main": "dist/index.js",
   "engines": {
     "node": ">=20.0.0"

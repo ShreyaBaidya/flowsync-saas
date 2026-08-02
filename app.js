@@ -1,5 +1,5 @@
 /* ============================================================
-   FLOWSYNC — App JavaScript
+   TASKLUNE — App JavaScript
    ============================================================ */
 
 (function () {
@@ -315,7 +315,7 @@
   /* ── Dynamic copyright year ── */
   const copyrightEl = document.getElementById('footerCopyright');
   if (copyrightEl) {
-    copyrightEl.textContent = `© ${new Date().getFullYear()} Flowsync, Inc. All rights reserved.`;
+    copyrightEl.textContent = `© ${new Date().getFullYear()} TaskLune, Inc. All rights reserved.`;
   }
 
 })();

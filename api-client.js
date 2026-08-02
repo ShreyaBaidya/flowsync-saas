@@ -1,5 +1,5 @@
 /* ============================================================
-   FLOWSYNC — API Client Module
+   TASKLUNE — API Client Module
    Reusable fetch wrapper with automatic JWT token handling.
    ============================================================ */
 

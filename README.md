@@ -1,6 +1,8 @@
-# 🚀 FlowSync – Full-Stack SaaS Project Management Platform
+# 🚀 TaskLune – Full-Stack SaaS Project Management Platform
 
-FlowSync is a modern **full-stack SaaS project management application** built with **HTML, CSS, JavaScript, TypeScript, Node.js, Express.js, and MongoDB**.
+TaskLune is a modern **full-stack SaaS project management platform** built with **HTML, CSS, JavaScript, TypeScript, Node.js, Express.js, and MongoDB**.
+
+It enables individuals and teams to securely organize projects, manage tasks, collaborate, and monitor progress through an intuitive dashboard using **JWT Authentication**, **Refresh Token Rotation**, and a RESTful backend.
 
 It enables users to securely manage projects and tasks through a clean and responsive interface with **JWT Authentication**, **Refresh Token Rotation**, and a RESTful backend.
 
@@ -138,7 +140,7 @@ It enables users to securely manage projects and tasks through a clean and respo
 # 📂 Project Structure
 
 ```text
-flowsync-saas
+TaskLune
 │
 ├── server
 │   ├── src
@@ -179,9 +181,9 @@ flowsync-saas
 ## 1. Clone the Repository
 
 ```bash
-git clone https://github.com/ShreyaBaidya/flowsync-saas.git
+git clone https://github.com/ShreyaBaidya/tasklune-saas.git
 
-cd flowsync-saas
+cd tasklune-saas
 ```
 
 ---

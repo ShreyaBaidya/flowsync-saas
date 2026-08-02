@@ -1,5 +1,5 @@
 /* ============================================================
-   FLOWSYNC — Dashboard Application JavaScript
+   TASKLUNE — Dashboard Application JavaScript
    Single-page hash-router inside dashboard.html
    Depends on: auth-state.js, app-store.js
    ============================================================ */

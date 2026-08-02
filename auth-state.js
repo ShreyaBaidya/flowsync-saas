@@ -1,5 +1,5 @@
 /* ============================================================
-   FLOWSYNC — Auth State Module
+   TASKLUNE — Auth State Module
    Single source of truth for authentication state.
    Used by auth.js (write) and app.js / navbar (read).
    Storage: localStorage — persists across page refreshes.

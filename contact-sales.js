@@ -1,5 +1,5 @@
 /* ============================================================
-   FLOWSYNC — Contact Sales Modal
+   TASKLUNE — Contact Sales Modal
    Handles open/close, validation, and submission for the
    Contact Sales modal on the landing page.
    No external email service — submission is handled locally.

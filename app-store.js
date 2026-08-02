@@ -1,5 +1,5 @@
 /* ============================================================
-   FLOWSYNC — App Data Store
+   TASKLUNE — App Data Store
    localStorage-backed store for projects, tasks, and team.
    Seeded with realistic demo data on first load.
    ============================================================ */
@@ -28,9 +28,12 @@ const FlowsyncStore = (function () {
   /* ── seed demo data on first use ── */
   function seed() {
     // Projects and tasks now come from the backend.
-    // Remove any stale task or team data written by the old demo seed.
+    // Remove any stale task data written by the old demo seed.
     localStorage.removeItem(KEYS.tasks);
-    localStorage.removeItem(KEYS.team);
+    // NOTE: KEYS.team is intentionally NOT cleared here.
+    // Team members are localStorage-only (no backend API) and must
+    // survive page refreshes. The old demo users were a one-time
+    // migration concern — clearing them here would wipe real user data.
   }
 
   /* ── Projects CRUD ── */
